@@ -1,0 +1,29 @@
+{
+	"bin": {},
+	"dependencies": {},
+	"devDependencies": {
+		"@joelek/ts-autoguard": "github:joelek/ts-autoguard#semver:^5",
+		"@joelek/ts-bundle": "github:joelek/ts-bundle#semver:^0",
+		"@types/node": "^14",
+		"typescript": "^4"
+	},
+	"license": "MIT",
+	"main": "./dist/server/bundle.js",
+	"name": "@joelek/autoguard-template",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/joelek/autoguard-template.git"
+	},
+	"scripts": {
+		"build": "npm run codegen && npm run compile && npm run bundle",
+		"bundle:client": "npx tsb --entry=./build/client/index.js --bundle=./dist/client/bundle.js",
+		"bundle:server": "npx tsb --entry=./build/server/index.js --bundle=./dist/server/bundle.js",
+		"bundle": "npm run bundle:client && npm run bundle:server",
+		"clean": "rm -rf ./build/ ./node_modules/",
+		"codegen": "npx autoguard",
+		"compile": "npx tsc --build",
+		"preversion": "npm run build && git add ./",
+		"postversion": "git push && git push --tags"
+	},
+	"version": "0.0.0"
+}

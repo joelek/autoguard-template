@@ -1,0 +1,10 @@
+guard Food: {
+	food_id: number,
+	name: string
+};
+
+route GET:/food/<food_id:number>/ => {
+	food: Food
+};
+
+route GET:/<filename:string> => binary;

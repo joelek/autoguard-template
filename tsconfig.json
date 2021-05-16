@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"composite": true,
+		"module": "commonjs",
+		"outDir": "./build/",
+		"rootDir": "./projects/",
+		"strict": true,
+		"target": "es6"
+	},
+	"include": [],
+	"references": [
+		{
+			"path": "./projects/client/"
+		},
+		{
+			"path": "./projects/server/"
+		},
+		{
+			"path": "./projects/shared/"
+		}
+	]
+}
