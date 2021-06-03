@@ -9,7 +9,7 @@ export const makeClient = (options?: Partial<{
 }>): autoguard.api.Client<shared.Autoguard.Requests, shared.Autoguard.Responses> => ({
 	"GET:/food/<food_id>/": async (request) => {
 		let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
-		guard.as(request, "CLIENT:request");
+		guard.as(request, "request");
 		let method = "GET";
 		let components = new Array<string>();
 		components.push(decodeURIComponent("food"));
@@ -25,13 +25,13 @@ export const makeClient = (options?: Partial<{
 			let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 			let payload = await autoguard.api.deserializePayload(raw.payload);
 			let guard = shared.Autoguard.Responses["GET:/food/<food_id>/"];
-			let response = guard.as({ status, headers, payload }, "CLIENT:response");
+			let response = guard.as({ status, headers, payload }, "response");
 			return new autoguard.api.ServerResponse(response);
 		}
 	},
 	"GET:/<filename>": async (request) => {
 		let guard = shared.Autoguard.Requests["GET:/<filename>"];
-		guard.as(request, "CLIENT:request");
+		guard.as(request, "request");
 		let method = "GET";
 		let components = new Array<string>();
 		components.push(String(request.options["filename"]));
@@ -45,7 +45,7 @@ export const makeClient = (options?: Partial<{
 			let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 			let payload = raw.payload;
 			let guard = shared.Autoguard.Responses["GET:/<filename>"];
-			let response = guard.as({ status, headers, payload }, "CLIENT:response");
+			let response = guard.as({ status, headers, payload }, "response");
 			return new autoguard.api.ServerResponse(response);
 		}
 	},

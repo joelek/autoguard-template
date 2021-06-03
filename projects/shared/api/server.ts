@@ -5,7 +5,7 @@ import * as shared from "./index";
 
 export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Requests, shared.Autoguard.Responses>, options?: Partial<{ urlPrefix: string }>): autoguard.api.RequestListener => {
 	let endpoints = new Array<autoguard.api.Endpoint>();
-	endpoints.push((raw) => {
+	endpoints.push((raw, auxillary) => {
 		let method = "GET";
 		let components = new Array<[string, string]>();
 		components.push(["", decodeURIComponent("food")]);
@@ -20,14 +20,14 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 				let payload = await autoguard.api.deserializePayload(raw.payload);
 				let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
-				let request = guard.as({ options, headers, payload }, "SERVER:request");
+				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
-						let response = await routes["GET:/food/<food_id>/"](new autoguard.api.ClientRequest(request));
+						let response = await routes["GET:/food/<food_id>/"](new autoguard.api.ClientRequest(request, auxillary));
 						return {
 							validateResponse: async () => {
 								let guard = shared.Autoguard.Responses["GET:/food/<food_id>/"];
-								guard.as(response, "SERVER:response");
+								guard.as(response, "response");
 								return response;
 							}
 						};
@@ -36,7 +36,7 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 			}
 		};
 	});
-	endpoints.push((raw) => {
+	endpoints.push((raw, auxillary) => {
 		let method = "GET";
 		let components = new Array<[string, string]>();
 		components.push(["filename", raw.components[0]]);
@@ -49,14 +49,14 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 				let payload = await autoguard.api.deserializePayload(raw.payload);
 				let guard = shared.Autoguard.Requests["GET:/<filename>"];
-				let request = guard.as({ options, headers, payload }, "SERVER:request");
+				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
-						let response = await routes["GET:/<filename>"](new autoguard.api.ClientRequest(request));
+						let response = await routes["GET:/<filename>"](new autoguard.api.ClientRequest(request, auxillary));
 						return {
 							validateResponse: async () => {
 								let guard = shared.Autoguard.Responses["GET:/<filename>"];
-								guard.as(response, "SERVER:response");
+								guard.as(response, "response");
 								return response;
 							}
 						};
