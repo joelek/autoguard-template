@@ -656,8 +656,9 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     exports.getHeaders = getHeaders;
     ;
     class ClientRequest {
-        constructor(request) {
+        constructor(request, auxillary) {
             this.request = request;
+            this.auxillary = auxillary;
         }
         options() {
             let options = this.request.options;
@@ -672,6 +673,9 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                 let payload = this.request.payload;
                 return (exports.Binary.is(payload) ? yield collectPayload(payload) : payload);
             });
+        }
+        socket() {
+            return this.auxillary.socket;
         }
     }
     exports.ClientRequest = ClientRequest;
@@ -939,6 +943,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
             let payload = {
                 [Symbol.asyncIterator]: () => httpRequest[Symbol.asyncIterator]()
             };
+            let socket = httpRequest.socket;
             let raw = {
                 method,
                 components,
@@ -946,7 +951,10 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                 headers,
                 payload
             };
-            let filteredEndpoints = endpoints.map((endpoint) => endpoint(raw));
+            let auxillary = {
+                socket
+            };
+            let filteredEndpoints = endpoints.map((endpoint) => endpoint(raw, auxillary));
             filteredEndpoints = filteredEndpoints.filter((endpoint) => endpoint.acceptsComponents());
             if (filteredEndpoints.length === 0) {
                 return respond(httpResponse, {
@@ -1215,7 +1223,7 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
     exports.makeServer = void 0;
     const makeServer = (routes, options) => {
         let endpoints = new Array();
-        endpoints.push((raw) => {
+        endpoints.push((raw, auxillary) => {
             let method = "GET";
             let components = new Array();
             components.push(["", decodeURIComponent("food")]);
@@ -1230,14 +1238,14 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                     let headers = autoguard.api.combineKeyValuePairs(raw.headers);
                     let payload = yield autoguard.api.deserializePayload(raw.payload);
                     let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
-                    let request = guard.as({ options, headers, payload }, "SERVER:request");
+                    let request = guard.as({ options, headers, payload }, "request");
                     return {
                         handleRequest: () => __awaiter(void 0, void 0, void 0, function* () {
-                            let response = yield routes["GET:/food/<food_id>/"](new autoguard.api.ClientRequest(request));
+                            let response = yield routes["GET:/food/<food_id>/"](new autoguard.api.ClientRequest(request, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
                                     let guard = shared.Autoguard.Responses["GET:/food/<food_id>/"];
-                                    guard.as(response, "SERVER:response");
+                                    guard.as(response, "response");
                                     return response;
                                 })
                             };
@@ -1246,7 +1254,7 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                 })
             };
         });
-        endpoints.push((raw) => {
+        endpoints.push((raw, auxillary) => {
             let method = "GET";
             let components = new Array();
             components.push(["filename", raw.components[0]]);
@@ -1259,14 +1267,14 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                     let headers = autoguard.api.combineKeyValuePairs(raw.headers);
                     let payload = yield autoguard.api.deserializePayload(raw.payload);
                     let guard = shared.Autoguard.Requests["GET:/<filename>"];
-                    let request = guard.as({ options, headers, payload }, "SERVER:request");
+                    let request = guard.as({ options, headers, payload }, "request");
                     return {
                         handleRequest: () => __awaiter(void 0, void 0, void 0, function* () {
-                            let response = yield routes["GET:/<filename>"](new autoguard.api.ClientRequest(request));
+                            let response = yield routes["GET:/<filename>"](new autoguard.api.ClientRequest(request, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
                                     let guard = shared.Autoguard.Responses["GET:/<filename>"];
-                                    guard.as(response, "SERVER:response");
+                                    guard.as(response, "response");
                                     return response;
                                 })
                             };
