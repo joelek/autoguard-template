@@ -1180,14 +1180,14 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
             "Food": autoguard.guards.Reference.of(() => exports.Food)
         };
         Autoguard.Requests = {
-            "GET:/food/<food_id>/": autoguard.guards.Object.of({
+            "getFood": autoguard.guards.Object.of({
                 "options": autoguard.guards.Intersection.of(autoguard.api.Options, autoguard.guards.Object.of({
                     "food_id": autoguard.guards.Number
                 })),
                 "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
                 "payload": autoguard.guards.Union.of(autoguard.guards.Undefined)
             }),
-            "GET:/<filename>": autoguard.guards.Object.of({
+            "getStaticContent": autoguard.guards.Object.of({
                 "options": autoguard.guards.Intersection.of(autoguard.api.Options, autoguard.guards.Object.of({
                     "filename": autoguard.guards.String
                 })),
@@ -1196,14 +1196,14 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
             })
         };
         Autoguard.Responses = {
-            "GET:/food/<food_id>/": autoguard.guards.Object.of({
+            "getFood": autoguard.guards.Object.of({
                 "status": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Number),
                 "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
                 "payload": autoguard.guards.Object.of({
                     "food": autoguard.guards.Reference.of(() => exports.Food)
                 })
             }),
-            "GET:/<filename>": autoguard.guards.Object.of({
+            "getStaticContent": autoguard.guards.Object.of({
                 "status": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Number),
                 "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
                 "payload": autoguard.api.Binary
@@ -1257,15 +1257,15 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                     options["food_id"] = autoguard.api.getValue(components, "food_id", false);
                     let headers = autoguard.api.combineKeyValuePairs(raw.headers);
                     let payload = yield autoguard.api.deserializePayload(raw.payload);
-                    let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
+                    let guard = shared.Autoguard.Requests["getFood"];
                     let request = guard.as({ options, headers, payload }, "request");
                     return {
                         handleRequest: () => __awaiter(void 0, void 0, void 0, function* () {
-                            let response = yield routes["GET:/food/<food_id>/"](new autoguard.api.ClientRequest(request, auxillary));
+                            let response = yield routes["getFood"](new autoguard.api.ClientRequest(request, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
                                     var _a, _b;
-                                    let guard = shared.Autoguard.Responses["GET:/food/<food_id>/"];
+                                    let guard = shared.Autoguard.Responses["getFood"];
                                     guard.as(response, "response");
                                     let status = (_a = response.status) !== null && _a !== void 0 ? _a : 200;
                                     let headers = new Array();
@@ -1291,15 +1291,15 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                     options["filename"] = autoguard.api.getValue(components, "filename", true);
                     let headers = autoguard.api.combineKeyValuePairs(raw.headers);
                     let payload = yield autoguard.api.deserializePayload(raw.payload);
-                    let guard = shared.Autoguard.Requests["GET:/<filename>"];
+                    let guard = shared.Autoguard.Requests["getStaticContent"];
                     let request = guard.as({ options, headers, payload }, "request");
                     return {
                         handleRequest: () => __awaiter(void 0, void 0, void 0, function* () {
-                            let response = yield routes["GET:/<filename>"](new autoguard.api.ClientRequest(request, auxillary));
+                            let response = yield routes["getStaticContent"](new autoguard.api.ClientRequest(request, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
                                     var _a, _b;
-                                    let guard = shared.Autoguard.Responses["GET:/<filename>"];
+                                    let guard = shared.Autoguard.Responses["getStaticContent"];
                                     guard.as(response, "response");
                                     let status = (_a = response.status) !== null && _a !== void 0 ? _a : 200;
                                     let headers = new Array();
@@ -1346,7 +1346,7 @@ define("build/server/index", ["require", "exports", "node_modules/@joelek/ts-aut
     Object.defineProperty(exports, "__esModule", { value: true });
     const port = 8080;
     const httpServer = libhttp.createServer({}, libserver.makeServer({
-        "GET:/food/<food_id>/": (request) => __awaiter(void 0, void 0, void 0, function* () {
+        getFood: (request) => __awaiter(void 0, void 0, void 0, function* () {
             let options = request.options();
             let food_id = options.food_id;
             if (food_id !== 1337) {
@@ -1361,7 +1361,7 @@ define("build/server/index", ["require", "exports", "node_modules/@joelek/ts-aut
                 }
             };
         }),
-        "GET:/<filename>": (request) => __awaiter(void 0, void 0, void 0, function* () {
+        getStaticContent: (request) => __awaiter(void 0, void 0, void 0, function* () {
             let options = request.options();
             return autoguard.api.makeReadStreamResponse("./dist/client/", options.filename, request);
         })
