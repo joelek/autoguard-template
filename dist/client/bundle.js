@@ -476,9 +476,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
         function settle(resolve, reject, d, v) { Promise.resolve(v).then(function (v) { resolve({ value: v, done: d }); }, reject); }
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.makeReadStreamResponse = exports.getContentTypeFromExtension = exports.parseRangeHeader = exports.route = exports.combineRawHeaders = exports.respond = exports.makeNodeRequestHandler = exports.xhr = exports.acceptsMethod = exports.acceptsComponents = exports.transformResponse = exports.getContentType = exports.deserializePayload = exports.deserializeStringPayload = exports.serializePayload = exports.serializeStringPayload = exports.collectPayload = exports.ServerResponse = exports.ClientRequest = exports.getHeaders = exports.getParameters = exports.getComponents = exports.getBooleanOption = exports.getNumberOption = exports.getStringOption = exports.serializeParameters = exports.combineKeyValuePairs = exports.extractKeyValuePairs = exports.serializeComponents = exports.Binary = exports.SyncBinary = exports.AsyncBinary = exports.Headers = exports.Options = void 0;
-    exports.Options = guards.Record.of(guards.Union.of(guards.Boolean, guards.Number, guards.String));
-    exports.Headers = guards.Record.of(guards.Union.of(guards.Boolean, guards.Number, guards.String));
+    exports.makeReadStreamResponse = exports.getContentTypeFromExtension = exports.parseRangeHeader = exports.route = exports.combineRawHeaders = exports.respond = exports.makeNodeRequestHandler = exports.xhr = exports.acceptsMethod = exports.acceptsComponents = exports.finalizeResponse = exports.deserializePayload = exports.deserializeStringPayload = exports.serializePayload = exports.serializeStringPayload = exports.collectPayload = exports.EndpointError = exports.ServerResponse = exports.ClientRequest = exports.isPayloadBinary = exports.getHeaders = exports.getParameters = exports.getComponents = exports.deserializeValue = exports.serializeValue = exports.getValue = exports.serializeParameters = exports.combineKeyValuePairs = exports.extractKeyValuePairs = exports.appendKeyValuePair = exports.serializeComponents = exports.Headers = exports.Options = exports.JSON = exports.Primitive = exports.Binary = exports.SyncBinary = exports.AsyncBinary = void 0;
     exports.AsyncBinary = {
         as(subject, path = "") {
             if (subject != null) {
@@ -526,6 +524,10 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
         }
     };
     exports.Binary = guards.Union.of(exports.AsyncBinary, exports.SyncBinary);
+    exports.Primitive = guards.Union.of(guards.Boolean, guards.Number, guards.String, guards.Undefined);
+    exports.JSON = guards.Union.of(guards.Boolean, guards.Null, guards.Number, guards.String, guards.Array.of(guards.Reference.of(() => exports.JSON)), guards.Record.of(guards.Reference.of(() => exports.JSON)), guards.Undefined);
+    exports.Options = guards.Record.of(exports.JSON);
+    exports.Headers = guards.Record.of(exports.JSON);
     function serializeComponents(components) {
         return "/" + components
             .map((component) => {
@@ -535,11 +537,24 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     }
     exports.serializeComponents = serializeComponents;
     ;
-    function extractKeyValuePairs(record, exclude = []) {
+    function appendKeyValuePair(pairs, key, value, plain) {
+        let serialized = serializeValue(value, plain);
+        if (serialized !== undefined) {
+            pairs.push([key, serialized]);
+        }
+    }
+    exports.appendKeyValuePair = appendKeyValuePair;
+    ;
+    function extractKeyValuePairs(record, exclude) {
         let pairs = new Array();
         for (let [key, value] of Object.entries(record)) {
-            if (value !== undefined && !exclude.includes(key)) {
-                pairs.push([key, String(value)]);
+            if (!exclude.includes(key) && value !== undefined) {
+                if (guards.String.is(value)) {
+                    pairs.push([key, value]);
+                }
+                else {
+                    throw `Expected value of undeclared "${key}" to be a string!`;
+                }
             }
         }
         return pairs;
@@ -568,50 +583,34 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     }
     exports.serializeParameters = serializeParameters;
     ;
-    function getStringOption(pairs, key) {
+    function getValue(pairs, key, plain) {
         for (let pair of pairs) {
             if (pair[0] === key) {
                 try {
                     let value = pair[1];
-                    if (guards.String.is(value)) {
-                        return value;
-                    }
+                    return deserializeValue(value, plain);
                 }
                 catch (error) { }
             }
         }
     }
-    exports.getStringOption = getStringOption;
+    exports.getValue = getValue;
     ;
-    function getNumberOption(pairs, key) {
-        for (let pair of pairs) {
-            if (pair[0] === key) {
-                try {
-                    let value = JSON.parse(pair[1]);
-                    if (guards.Number.is(value)) {
-                        return value;
-                    }
-                }
-                catch (error) { }
-            }
+    function serializeValue(value, plain) {
+        if (value === undefined) {
+            return;
         }
+        return plain ? String(value) : globalThis.JSON.stringify(value);
     }
-    exports.getNumberOption = getNumberOption;
+    exports.serializeValue = serializeValue;
     ;
-    function getBooleanOption(pairs, key) {
-        for (let pair of pairs) {
-            if (pair[0] === key) {
-                try {
-                    let value = JSON.parse(pair[1]);
-                    if (guards.Boolean.is(value)) {
-                        return value;
-                    }
-                }
-                catch (error) { }
-            }
+    function deserializeValue(value, plain) {
+        if (value === undefined) {
+            return;
         }
+        return plain ? value : globalThis.JSON.parse(value);
     }
-    exports.getBooleanOption = getBooleanOption;
+    exports.deserializeValue = deserializeValue;
     ;
     function getComponents(url) {
         return url.split("?")[0].split("/").map((part) => {
@@ -655,6 +654,11 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     }
     exports.getHeaders = getHeaders;
     ;
+    function isPayloadBinary(payload) {
+        return typeof payload !== "string" && exports.Binary.is(payload);
+    }
+    exports.isPayloadBinary = isPayloadBinary;
+    ;
     class ClientRequest {
         constructor(request, auxillary) {
             this.request = request;
@@ -670,8 +674,13 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
         }
         payload() {
             return __awaiter(this, void 0, void 0, function* () {
+                if (this.collectedPayload !== undefined) {
+                    return this.collectedPayload;
+                }
                 let payload = this.request.payload;
-                return (exports.Binary.is(payload) ? yield collectPayload(payload) : payload);
+                let collectedPayload = (isPayloadBinary(payload) ? yield collectPayload(payload) : payload);
+                this.collectedPayload = collectedPayload;
+                return collectedPayload;
             });
         }
         socket() {
@@ -694,12 +703,35 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
         }
         payload() {
             return __awaiter(this, void 0, void 0, function* () {
+                if (this.collectedPayload !== undefined) {
+                    return this.collectedPayload;
+                }
                 let payload = this.response.payload;
-                return (exports.Binary.is(payload) ? yield collectPayload(payload) : payload);
+                let collectedPayload = (isPayloadBinary(payload) ? yield collectPayload(payload) : payload);
+                this.collectedPayload = collectedPayload;
+                return collectedPayload;
             });
         }
     }
     exports.ServerResponse = ServerResponse;
+    ;
+    class EndpointError {
+        constructor(response) {
+            this.response = response;
+        }
+        getResponse() {
+            var _a, _b, _c;
+            let status = (_a = this.response.status) !== null && _a !== void 0 ? _a : 500;
+            let headers = (_b = this.response.headers) !== null && _b !== void 0 ? _b : [];
+            let payload = (_c = this.response.payload) !== null && _c !== void 0 ? _c : [];
+            return {
+                status,
+                headers,
+                payload
+            };
+        }
+    }
+    exports.EndpointError = EndpointError;
     ;
     function collectPayload(binary) {
         var binary_1, binary_1_1;
@@ -749,7 +781,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
         if (payload === undefined) {
             return [];
         }
-        let string = JSON.stringify(payload);
+        let string = globalThis.JSON.stringify(payload);
         return serializeStringPayload(string);
     }
     exports.serializePayload = serializePayload;
@@ -767,39 +799,25 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     function deserializePayload(binary) {
         return __awaiter(this, void 0, void 0, function* () {
             let string = yield deserializeStringPayload(binary);
-            return string === "" ? undefined : JSON.parse(string);
+            return string === "" ? undefined : globalThis.JSON.parse(string);
         });
     }
     exports.deserializePayload = deserializePayload;
     ;
-    function getContentType(payload) {
-        if (exports.Binary.is(payload) || payload === undefined) {
-            return "application/octet-stream";
-        }
-        else {
-            return "application/json; charset=utf-8";
-        }
-    }
-    exports.getContentType = getContentType;
-    ;
-    function transformResponse(response) {
-        var _a, _b;
-        let status = (_a = response.status) !== null && _a !== void 0 ? _a : 200;
-        let headers = extractKeyValuePairs((_b = response.headers) !== null && _b !== void 0 ? _b : {});
+    function finalizeResponse(raw, defaultContentType) {
+        let headers = raw.headers;
         let contentType = headers.find((header) => {
             return header[0].toLowerCase() === "content-type";
         });
         if (contentType === undefined) {
-            headers.push(["Content-Type", getContentType(response.payload)]);
+            headers = [
+                ...headers,
+                ["Content-Type", defaultContentType]
+            ];
         }
-        let payload = exports.Binary.is(response.payload) ? response.payload : serializePayload(response.payload);
-        return {
-            status: status,
-            headers: headers,
-            payload: payload
-        };
+        return Object.assign(Object.assign({}, raw), { headers });
     }
-    exports.transformResponse = transformResponse;
+    exports.finalizeResponse = finalizeResponse;
     ;
     function acceptsComponents(one, two) {
         if (one.length !== two.length) {
@@ -977,8 +995,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                 try {
                     let handled = yield valid.handleRequest();
                     try {
-                        let response = yield handled.validateResponse();
-                        let raw = transformResponse(response);
+                        let raw = yield handled.validateResponse();
                         return yield respond(httpResponse, raw);
                     }
                     catch (error) {
@@ -991,15 +1008,18 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                     }
                 }
                 catch (error) {
-                    let status = 500;
-                    if (Number.isInteger(error) && error >= 100 && error <= 999) {
-                        status = error;
-                    }
-                    return respond(httpResponse, {
-                        status: status,
+                    let response = {
+                        status: 500,
                         headers: [],
                         payload: []
-                    });
+                    };
+                    if (Number.isInteger(error) && error >= 100 && error <= 999) {
+                        response.status = error;
+                    }
+                    else if (error instanceof EndpointError) {
+                        response = error.getResponse();
+                    }
+                    return respond(httpResponse, response);
                 }
             }
             catch (error) {
@@ -1223,18 +1243,20 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
     exports.makeClient = void 0;
     const makeClient = (options) => ({
         "GET:/food/<food_id>/": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a, _b, _c;
+            var _a, _b, _c, _d;
             let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
             guard.as(request, "request");
             let method = "GET";
             let components = new Array();
             components.push(decodeURIComponent("food"));
-            components.push(String(request.options["food_id"]));
+            components.push((_a = autoguard.api.serializeValue(request.options["food_id"], false)) !== null && _a !== void 0 ? _a : "");
             components.push(decodeURIComponent(""));
-            let parameters = autoguard.api.extractKeyValuePairs((_a = request.options) !== null && _a !== void 0 ? _a : {}, ["food_id"]);
-            let headers = autoguard.api.extractKeyValuePairs((_b = request.headers) !== null && _b !== void 0 ? _b : {});
+            let parameters = new Array();
+            parameters.push(...autoguard.api.extractKeyValuePairs((_b = request.options) !== null && _b !== void 0 ? _b : {}, [...["food_id"], ...parameters.map((parameter) => parameter[0])]));
+            let headers = new Array();
+            headers.push(...autoguard.api.extractKeyValuePairs((_c = request.headers) !== null && _c !== void 0 ? _c : {}, headers.map((header) => header[0])));
             let payload = autoguard.api.serializePayload(request.payload);
-            let requestHandler = (_c = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _c !== void 0 ? _c : autoguard.api.xhr;
+            let requestHandler = (_d = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _d !== void 0 ? _d : autoguard.api.xhr;
             let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
             {
                 let status = raw.status;
@@ -1246,16 +1268,18 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
             }
         }),
         "GET:/<filename>": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _d, _e, _f;
+            var _e, _f, _g, _h;
             let guard = shared.Autoguard.Requests["GET:/<filename>"];
             guard.as(request, "request");
             let method = "GET";
             let components = new Array();
-            components.push(String(request.options["filename"]));
-            let parameters = autoguard.api.extractKeyValuePairs((_d = request.options) !== null && _d !== void 0 ? _d : {}, ["filename"]);
-            let headers = autoguard.api.extractKeyValuePairs((_e = request.headers) !== null && _e !== void 0 ? _e : {});
+            components.push((_e = autoguard.api.serializeValue(request.options["filename"], true)) !== null && _e !== void 0 ? _e : "");
+            let parameters = new Array();
+            parameters.push(...autoguard.api.extractKeyValuePairs((_f = request.options) !== null && _f !== void 0 ? _f : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
+            let headers = new Array();
+            headers.push(...autoguard.api.extractKeyValuePairs((_g = request.headers) !== null && _g !== void 0 ? _g : {}, headers.map((header) => header[0])));
             let payload = autoguard.api.serializePayload(request.payload);
-            let requestHandler = (_f = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _f !== void 0 ? _f : autoguard.api.xhr;
+            let requestHandler = (_h = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _h !== void 0 ? _h : autoguard.api.xhr;
             let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
             {
                 let status = raw.status;
