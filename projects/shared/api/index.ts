@@ -17,7 +17,7 @@ export namespace Autoguard {
 	export type Guards = { [A in keyof typeof Guards]: ReturnType<typeof Guards[A]["as"]>; };
 
 	export const Requests = {
-		"GET:/food/<food_id>/": autoguard.guards.Object.of({
+		"getFood": autoguard.guards.Object.of({
 			"options": autoguard.guards.Intersection.of(
 				autoguard.api.Options,
 				autoguard.guards.Object.of({
@@ -35,7 +35,7 @@ export namespace Autoguard {
 				autoguard.guards.Undefined
 			)
 		}),
-		"GET:/<filename>": autoguard.guards.Object.of({
+		"getStaticContent": autoguard.guards.Object.of({
 			"options": autoguard.guards.Intersection.of(
 				autoguard.api.Options,
 				autoguard.guards.Object.of({
@@ -58,7 +58,7 @@ export namespace Autoguard {
 	export type Requests = { [A in keyof typeof Requests]: ReturnType<typeof Requests[A]["as"]>; };
 
 	export const Responses = {
-		"GET:/food/<food_id>/": autoguard.guards.Object.of({
+		"getFood": autoguard.guards.Object.of({
 			"status": autoguard.guards.Union.of(
 				autoguard.guards.Undefined,
 				autoguard.guards.Number
@@ -74,7 +74,7 @@ export namespace Autoguard {
 				"food": autoguard.guards.Reference.of(() => Food)
 			})
 		}),
-		"GET:/<filename>": autoguard.guards.Object.of({
+		"getStaticContent": autoguard.guards.Object.of({
 			"status": autoguard.guards.Union.of(
 				autoguard.guards.Undefined,
 				autoguard.guards.Number

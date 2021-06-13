@@ -3,8 +3,8 @@ guard Food: {
 	name: string
 };
 
-route GET:/food/<food_id:number>/ => {
+route getFood(): GET:/food/<food_id:number>/ => {
 	food: Food
 };
 
-route GET:/<filename:string> => binary;
+route getStaticContent(): GET:/<filename> => binary;

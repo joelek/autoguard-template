@@ -5,7 +5,7 @@ import * as libserver from "../shared/api/server";
 const port = 8080;
 
 const httpServer = libhttp.createServer({}, libserver.makeServer({
-	"GET:/food/<food_id>/": async (request) => {
+	getFood: async (request) => {
 		let options = request.options();
 		let food_id = options.food_id;
 		if (food_id !== 1337) {
@@ -20,7 +20,7 @@ const httpServer = libhttp.createServer({}, libserver.makeServer({
 			}
 		};
 	},
-	"GET:/<filename>": async (request) => {
+	getStaticContent: async (request) => {
 		let options = request.options();
 		return autoguard.api.makeReadStreamResponse("./dist/client/", options.filename, request);
 	}

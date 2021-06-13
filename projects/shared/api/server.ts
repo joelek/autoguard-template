@@ -19,14 +19,14 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 				options["food_id"] = autoguard.api.getValue(components, "food_id", false);
 				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 				let payload = await autoguard.api.deserializePayload(raw.payload);
-				let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
+				let guard = shared.Autoguard.Requests["getFood"];
 				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
-						let response = await routes["GET:/food/<food_id>/"](new autoguard.api.ClientRequest(request, auxillary));
+						let response = await routes["getFood"](new autoguard.api.ClientRequest(request, auxillary));
 						return {
 							validateResponse: async () => {
-								let guard = shared.Autoguard.Responses["GET:/food/<food_id>/"];
+								let guard = shared.Autoguard.Responses["getFood"];
 								guard.as(response, "response");
 								let status = response.status ?? 200;
 								let headers = new Array<[string, string]>();
@@ -52,14 +52,14 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 				options["filename"] = autoguard.api.getValue(components, "filename", true);
 				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 				let payload = await autoguard.api.deserializePayload(raw.payload);
-				let guard = shared.Autoguard.Requests["GET:/<filename>"];
+				let guard = shared.Autoguard.Requests["getStaticContent"];
 				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
-						let response = await routes["GET:/<filename>"](new autoguard.api.ClientRequest(request, auxillary));
+						let response = await routes["getStaticContent"](new autoguard.api.ClientRequest(request, auxillary));
 						return {
 							validateResponse: async () => {
-								let guard = shared.Autoguard.Responses["GET:/<filename>"];
+								let guard = shared.Autoguard.Responses["getStaticContent"];
 								guard.as(response, "response");
 								let status = response.status ?? 200;
 								let headers = new Array<[string, string]>();

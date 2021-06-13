@@ -2,7 +2,7 @@ import * as libclient from "../shared/api/client";
 
 const client = libclient.makeClient({ urlPrefix: "" });
 
-client["GET:/food/<food_id>/"]({
+client.getFood({
 	options: {
 		food_id: 1337
 	}
