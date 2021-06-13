@@ -16,7 +16,7 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 			acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
 			validateRequest: async () => {
 				let options = autoguard.api.combineKeyValuePairs(raw.parameters);
-				options["food_id"] = autoguard.api.getNumberOption(components, "food_id");
+				options["food_id"] = autoguard.api.getValue(components, "food_id", false);
 				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 				let payload = await autoguard.api.deserializePayload(raw.payload);
 				let guard = shared.Autoguard.Requests["GET:/food/<food_id>/"];
@@ -28,7 +28,11 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 							validateResponse: async () => {
 								let guard = shared.Autoguard.Responses["GET:/food/<food_id>/"];
 								guard.as(response, "response");
-								return response;
+								let status = response.status ?? 200;
+								let headers = new Array<[string, string]>();
+								headers.push(...autoguard.api.extractKeyValuePairs(response.headers ?? {}, headers.map((header) => header[0])));
+								let payload = autoguard.api.serializePayload(response.payload);
+								return autoguard.api.finalizeResponse({ status, headers, payload }, "application/json; charset=utf-8");
 							}
 						};
 					}
@@ -45,7 +49,7 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 			acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
 			validateRequest: async () => {
 				let options = autoguard.api.combineKeyValuePairs(raw.parameters);
-				options["filename"] = autoguard.api.getStringOption(components, "filename");
+				options["filename"] = autoguard.api.getValue(components, "filename", true);
 				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
 				let payload = await autoguard.api.deserializePayload(raw.payload);
 				let guard = shared.Autoguard.Requests["GET:/<filename>"];
@@ -57,7 +61,11 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 							validateResponse: async () => {
 								let guard = shared.Autoguard.Responses["GET:/<filename>"];
 								guard.as(response, "response");
-								return response;
+								let status = response.status ?? 200;
+								let headers = new Array<[string, string]>();
+								headers.push(...autoguard.api.extractKeyValuePairs(response.headers ?? {}, headers.map((header) => header[0])));
+								let payload = response.payload;
+								return autoguard.api.finalizeResponse({ status, headers, payload }, "application/octet-stream");
 							}
 						};
 					}
