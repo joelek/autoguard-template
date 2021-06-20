@@ -1516,9 +1516,9 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
                 "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             }),
             "getStaticContent": autoguard.guards.Object.of({
-                "options": autoguard.guards.Intersection.of(autoguard.guards.Object.of({
-                    "filename": autoguard.guards.String
-                }), autoguard.api.Options),
+                "options": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({
+                    "filename": autoguard.guards.Union.of(autoguard.guards.Array.of(autoguard.guards.String), autoguard.guards.Undefined)
+                }), autoguard.api.Options), autoguard.guards.Undefined),
                 "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
                 "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             })
@@ -1613,7 +1613,7 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
         endpoints.push((raw, auxillary) => {
             let method = "GET";
             let matchers = new Array();
-            matchers.push(new autoguard.api.DynamicRouteMatcher(1, 1, true, autoguard.guards.String));
+            matchers.push(new autoguard.api.DynamicRouteMatcher(0, Infinity, true, autoguard.guards.String));
             return {
                 acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, matchers),
                 acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
@@ -1696,8 +1696,9 @@ define("build/server/index", ["require", "exports", "node_modules/@joelek/ts-aut
             };
         }),
         getStaticContent: (request) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a;
             let options = request.options();
-            return autoguard.api.makeReadStreamResponse("./dist/client/", options.filename, request);
+            return autoguard.api.makeReadStreamResponse("./dist/client/", ((_a = options.filename) !== null && _a !== void 0 ? _a : []).join("/"), request);
         })
     }, { urlPrefix: "" }));
     httpServer.listen(port, () => {

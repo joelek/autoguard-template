@@ -37,11 +37,17 @@ export namespace Autoguard {
 			)
 		}),
 		"getStaticContent": autoguard.guards.Object.of({
-			"options": autoguard.guards.Intersection.of(
-				autoguard.guards.Object.of({
-					"filename": autoguard.guards.String
-				}),
-				autoguard.api.Options
+			"options": autoguard.guards.Union.of(
+				autoguard.guards.Intersection.of(
+					autoguard.guards.Object.of({
+						"filename": autoguard.guards.Union.of(
+							autoguard.guards.Array.of(autoguard.guards.String),
+							autoguard.guards.Undefined
+						)
+					}),
+					autoguard.api.Options
+				),
+				autoguard.guards.Undefined
 			),
 			"headers": autoguard.guards.Union.of(
 				autoguard.guards.Intersection.of(

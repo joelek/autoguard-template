@@ -1516,9 +1516,9 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
                 "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             }),
             "getStaticContent": autoguard.guards.Object.of({
-                "options": autoguard.guards.Intersection.of(autoguard.guards.Object.of({
-                    "filename": autoguard.guards.String
-                }), autoguard.api.Options),
+                "options": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({
+                    "filename": autoguard.guards.Union.of(autoguard.guards.Array.of(autoguard.guards.String), autoguard.guards.Undefined)
+                }), autoguard.api.Options), autoguard.guards.Undefined),
                 "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
                 "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             })
@@ -1597,23 +1597,23 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
             }
         }),
         "getStaticContent": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _g, _h, _j, _k, _l, _m;
+            var _g, _h, _j, _k, _l, _m, _o;
             let guard = shared.Autoguard.Requests["getStaticContent"];
             guard.as(request, "request");
             let method = "GET";
             let components = new Array();
-            components.push(...autoguard.api.encodeComponents([(_g = request.options) === null || _g === void 0 ? void 0 : _g["filename"]], true));
+            components.push(...autoguard.api.encodeComponents((_h = (_g = request.options) === null || _g === void 0 ? void 0 : _g["filename"]) !== null && _h !== void 0 ? _h : [], true));
             let parameters = new Array();
-            parameters.push(...autoguard.api.encodeUndeclaredParameterPairs((_h = request.options) !== null && _h !== void 0 ? _h : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
+            parameters.push(...autoguard.api.encodeUndeclaredParameterPairs((_j = request.options) !== null && _j !== void 0 ? _j : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
             let headers = new Array();
-            headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_j = request.headers) !== null && _j !== void 0 ? _j : {}, headers.map((header) => header[0])));
-            let payload = (_k = request.payload) !== null && _k !== void 0 ? _k : [];
-            let requestHandler = (_l = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _l !== void 0 ? _l : autoguard.api.xhr;
+            headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_k = request.headers) !== null && _k !== void 0 ? _k : {}, headers.map((header) => header[0])));
+            let payload = (_l = request.payload) !== null && _l !== void 0 ? _l : [];
+            let requestHandler = (_m = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _m !== void 0 ? _m : autoguard.api.xhr;
             let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
             {
                 let status = raw.status;
                 let headers = {};
-                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_m = raw.headers) !== null && _m !== void 0 ? _m : {}, Object.keys(headers)));
+                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_o = raw.headers) !== null && _o !== void 0 ? _o : {}, Object.keys(headers)));
                 let payload = raw.payload;
                 let guard = shared.Autoguard.Responses["getStaticContent"];
                 let response = guard.as({ status, headers, payload }, "response");

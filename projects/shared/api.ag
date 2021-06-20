@@ -7,4 +7,4 @@ route getFood(): GET:/food/<food_id:number>/ => {
 	food: Food
 };
 
-route getStaticContent(): GET:/<filename> => binary;
+route getStaticContent(): GET:/<filename*> => binary;

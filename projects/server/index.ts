@@ -22,7 +22,7 @@ const httpServer = libhttp.createServer({}, libserver.makeServer({
 	},
 	getStaticContent: async (request) => {
 		let options = request.options();
-		return autoguard.api.makeReadStreamResponse("./dist/client/", options.filename, request);
+		return autoguard.api.makeReadStreamResponse("./dist/client/", (options.filename ?? []).join("/"), request);
 	}
 }, { urlPrefix: "" }));
 

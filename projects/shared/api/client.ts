@@ -37,7 +37,7 @@ export const makeClient = (options?: Partial<{
 		guard.as(request, "request");
 		let method = "GET";
 		let components = new Array<string>();
-		components.push(...autoguard.api.encodeComponents([request.options?.["filename"]], true));
+		components.push(...autoguard.api.encodeComponents(request.options?.["filename"] ?? [], true));
 		let parameters = new Array<[string, string]>();
 		parameters.push(...autoguard.api.encodeUndeclaredParameterPairs(request.options ?? {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
 		let headers = new Array<[string, string]>();
