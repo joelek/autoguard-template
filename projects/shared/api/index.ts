@@ -19,37 +19,39 @@ export namespace Autoguard {
 	export const Requests = {
 		"getFood": autoguard.guards.Object.of({
 			"options": autoguard.guards.Intersection.of(
-				autoguard.api.Options,
 				autoguard.guards.Object.of({
 					"food_id": autoguard.guards.Number
-				})
+				}),
+				autoguard.api.Options
 			),
 			"headers": autoguard.guards.Union.of(
-				autoguard.guards.Undefined,
 				autoguard.guards.Intersection.of(
-					autoguard.api.Headers,
-					autoguard.guards.Object.of({})
-				)
+					autoguard.guards.Object.of({}),
+					autoguard.api.Headers
+				),
+				autoguard.guards.Undefined
 			),
 			"payload": autoguard.guards.Union.of(
+				autoguard.api.Binary,
 				autoguard.guards.Undefined
 			)
 		}),
 		"getStaticContent": autoguard.guards.Object.of({
 			"options": autoguard.guards.Intersection.of(
-				autoguard.api.Options,
 				autoguard.guards.Object.of({
 					"filename": autoguard.guards.String
-				})
+				}),
+				autoguard.api.Options
 			),
 			"headers": autoguard.guards.Union.of(
-				autoguard.guards.Undefined,
 				autoguard.guards.Intersection.of(
-					autoguard.api.Headers,
-					autoguard.guards.Object.of({})
-				)
+					autoguard.guards.Object.of({}),
+					autoguard.api.Headers
+				),
+				autoguard.guards.Undefined
 			),
 			"payload": autoguard.guards.Union.of(
+				autoguard.api.Binary,
 				autoguard.guards.Undefined
 			)
 		})
@@ -60,15 +62,15 @@ export namespace Autoguard {
 	export const Responses = {
 		"getFood": autoguard.guards.Object.of({
 			"status": autoguard.guards.Union.of(
-				autoguard.guards.Undefined,
-				autoguard.guards.Number
+				autoguard.guards.Number,
+				autoguard.guards.Undefined
 			),
 			"headers": autoguard.guards.Union.of(
-				autoguard.guards.Undefined,
 				autoguard.guards.Intersection.of(
-					autoguard.api.Headers,
-					autoguard.guards.Object.of({})
-				)
+					autoguard.guards.Object.of({}),
+					autoguard.api.Headers
+				),
+				autoguard.guards.Undefined
 			),
 			"payload": autoguard.guards.Object.of({
 				"food": autoguard.guards.Reference.of(() => Food)
@@ -76,17 +78,20 @@ export namespace Autoguard {
 		}),
 		"getStaticContent": autoguard.guards.Object.of({
 			"status": autoguard.guards.Union.of(
-				autoguard.guards.Undefined,
-				autoguard.guards.Number
+				autoguard.guards.Number,
+				autoguard.guards.Undefined
 			),
 			"headers": autoguard.guards.Union.of(
-				autoguard.guards.Undefined,
 				autoguard.guards.Intersection.of(
-					autoguard.api.Headers,
-					autoguard.guards.Object.of({})
-				)
+					autoguard.guards.Object.of({}),
+					autoguard.api.Headers
+				),
+				autoguard.guards.Undefined
 			),
-			"payload": autoguard.api.Binary
+			"payload": autoguard.guards.Union.of(
+				autoguard.api.Binary,
+				autoguard.guards.Undefined
+			)
 		})
 	};
 

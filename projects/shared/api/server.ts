@@ -7,30 +7,32 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 	let endpoints = new Array<autoguard.api.Endpoint>();
 	endpoints.push((raw, auxillary) => {
 		let method = "GET";
-		let components = new Array<[string, string]>();
-		components.push(["", decodeURIComponent("food")]);
-		components.push(["food_id", raw.components[1]]);
-		components.push(["", decodeURIComponent("")]);
+		let matchers = new Array<autoguard.api.RouteMatcher>();
+		matchers.push(new autoguard.api.StaticRouteMatcher(decodeURIComponent("food")));
+		matchers.push(new autoguard.api.DynamicRouteMatcher(1, 1, false, autoguard.guards.Number));
+		matchers.push(new autoguard.api.StaticRouteMatcher(decodeURIComponent("")));
 		return {
-			acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, components),
+			acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, matchers),
 			acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
 			validateRequest: async () => {
-				let options = autoguard.api.combineKeyValuePairs(raw.parameters);
-				options["food_id"] = autoguard.api.getValue(components, "food_id", false);
-				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
-				let payload = await autoguard.api.deserializePayload(raw.payload);
+				let options: Record<string, autoguard.api.JSON> = {};
+				options["food_id"] = matchers[1].getValue();
+				options = { ...options, ...autoguard.api.decodeUndeclaredParameters(raw.parameters ?? {}, Object.keys(options)) };
+				let headers: Record<string, autoguard.api.JSON> = {};
+				headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers ?? {}, Object.keys(headers)) };
+				let payload = raw.payload;
 				let guard = shared.Autoguard.Requests["getFood"];
 				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
-						let response = await routes["getFood"](new autoguard.api.ClientRequest(request, auxillary));
+						let response = await routes["getFood"](new autoguard.api.ClientRequest(request, true, auxillary));
 						return {
 							validateResponse: async () => {
 								let guard = shared.Autoguard.Responses["getFood"];
 								guard.as(response, "response");
 								let status = response.status ?? 200;
 								let headers = new Array<[string, string]>();
-								headers.push(...autoguard.api.extractKeyValuePairs(response.headers ?? {}, headers.map((header) => header[0])));
+								headers.push(...autoguard.api.encodeUndeclaredHeaderPairs(response.headers ?? {}, headers.map((header) => header[0])));
 								let payload = autoguard.api.serializePayload(response.payload);
 								return autoguard.api.finalizeResponse({ status, headers, payload }, "application/json; charset=utf-8");
 							}
@@ -42,29 +44,31 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 	});
 	endpoints.push((raw, auxillary) => {
 		let method = "GET";
-		let components = new Array<[string, string]>();
-		components.push(["filename", raw.components[0]]);
+		let matchers = new Array<autoguard.api.RouteMatcher>();
+		matchers.push(new autoguard.api.DynamicRouteMatcher(1, 1, true, autoguard.guards.String));
 		return {
-			acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, components),
+			acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, matchers),
 			acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
 			validateRequest: async () => {
-				let options = autoguard.api.combineKeyValuePairs(raw.parameters);
-				options["filename"] = autoguard.api.getValue(components, "filename", true);
-				let headers = autoguard.api.combineKeyValuePairs(raw.headers);
-				let payload = await autoguard.api.deserializePayload(raw.payload);
+				let options: Record<string, autoguard.api.JSON> = {};
+				options["filename"] = matchers[0].getValue();
+				options = { ...options, ...autoguard.api.decodeUndeclaredParameters(raw.parameters ?? {}, Object.keys(options)) };
+				let headers: Record<string, autoguard.api.JSON> = {};
+				headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers ?? {}, Object.keys(headers)) };
+				let payload = raw.payload;
 				let guard = shared.Autoguard.Requests["getStaticContent"];
 				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
-						let response = await routes["getStaticContent"](new autoguard.api.ClientRequest(request, auxillary));
+						let response = await routes["getStaticContent"](new autoguard.api.ClientRequest(request, true, auxillary));
 						return {
 							validateResponse: async () => {
 								let guard = shared.Autoguard.Responses["getStaticContent"];
 								guard.as(response, "response");
 								let status = response.status ?? 200;
 								let headers = new Array<[string, string]>();
-								headers.push(...autoguard.api.extractKeyValuePairs(response.headers ?? {}, headers.map((header) => header[0])));
-								let payload = response.payload;
+								headers.push(...autoguard.api.encodeUndeclaredHeaderPairs(response.headers ?? {}, headers.map((header) => header[0])));
+								let payload = response.payload ?? [];
 								return autoguard.api.finalizeResponse({ status, headers, payload }, "application/octet-stream");
 							}
 						};

@@ -57,7 +57,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Union = exports.Undefined = exports.Tuple = exports.StringLiteral = exports.String = exports.Reference = exports.Record = exports.Object = exports.NumberLiteral = exports.Number = exports.Null = exports.Intersection = exports.BooleanLiteral = exports.Boolean = exports.Array = exports.Any = void 0;
+    exports.Union = exports.Undefined = exports.Tuple = exports.StringLiteral = exports.String = exports.Reference = exports.Record = exports.Object = exports.NumberLiteral = exports.Number = exports.Null = exports.Intersection = exports.Group = exports.BooleanLiteral = exports.Boolean = exports.Array = exports.Any = void 0;
     exports.Any = {
         as(subject, path = "") {
             return subject;
@@ -97,7 +97,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
                     return true;
                 },
                 ts(eol = "\n") {
-                    return `${guard.ts(eol)}[]`;
+                    return `array<${guard.ts(eol)}>`;
                 }
             };
         }
@@ -146,6 +146,21 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
             };
         }
     };
+    exports.Group = {
+        of(guard, name) {
+            return {
+                as(subject, path = "") {
+                    return guard.as(subject, path);
+                },
+                is(subject) {
+                    return guard.is(subject);
+                },
+                ts(eol = "\n") {
+                    return name !== null && name !== void 0 ? name : guard.ts(eol);
+                }
+            };
+        }
+    };
     exports.Intersection = {
         of(...guards) {
             return {
@@ -167,10 +182,9 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
                 ts(eol = "\n") {
                     let lines = new globalThis.Array();
                     for (let guard of guards) {
-                        lines.push(guard.ts(eol));
+                        lines.push("\t" + guard.ts(eol + "\t"));
                     }
-                    let string = lines.join(" & ");
-                    return string;
+                    return "intersection<" + eol + lines.join("," + eol) + eol + ">";
                 }
             };
         }
@@ -265,7 +279,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
                     for (let [key, value] of globalThis.Object.entries(guards)) {
                         lines.push(`\t"${key}": ${value.ts(eol + "\t")}`);
                     }
-                    return lines.length > 0 ? "{" + eol + lines.join("," + eol) + eol + "}" : "{}";
+                    return "object<" + eol + lines.join("," + eol) + eol + ">";
                 }
             };
         }
@@ -293,7 +307,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
                     return true;
                 },
                 ts(eol = "\n") {
-                    return `{ [key]: ${guard.ts(eol)} }`;
+                    return `record<${guard.ts(eol)}>`;
                 }
             };
         }
@@ -383,7 +397,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
                     for (let guard of guards) {
                         lines.push(`\t${guard.ts(eol + "\t")}`);
                     }
-                    return lines.length > 0 ? "[" + eol + lines.join("," + eol) + eol + "]" : "[]";
+                    return "tuple<" + eol + lines.join("," + eol) + eol + ">";
                 }
             };
         }
@@ -432,10 +446,9 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
                 ts(eol = "\n") {
                     let lines = new globalThis.Array();
                     for (let guard of guards) {
-                        lines.push(guard.ts(eol));
+                        lines.push("\t" + guard.ts(eol + "\t"));
                     }
-                    let string = lines.join(" | ");
-                    return string;
+                    return "union<" + eol + lines.join("," + eol) + eol + ">";
                 }
             };
         }
@@ -476,7 +489,385 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
         function settle(resolve, reject, d, v) { Promise.resolve(v).then(function (v) { resolve({ value: v, done: d }); }, reject); }
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.makeReadStreamResponse = exports.getContentTypeFromExtension = exports.parseRangeHeader = exports.route = exports.combineRawHeaders = exports.respond = exports.makeNodeRequestHandler = exports.xhr = exports.acceptsMethod = exports.acceptsComponents = exports.finalizeResponse = exports.deserializePayload = exports.deserializeStringPayload = exports.serializePayload = exports.serializeStringPayload = exports.collectPayload = exports.EndpointError = exports.ServerResponse = exports.ClientRequest = exports.isPayloadBinary = exports.getHeaders = exports.getParameters = exports.getComponents = exports.deserializeValue = exports.serializeValue = exports.getValue = exports.serializeParameters = exports.combineKeyValuePairs = exports.extractKeyValuePairs = exports.appendKeyValuePair = exports.serializeComponents = exports.Headers = exports.Options = exports.JSON = exports.Primitive = exports.Binary = exports.SyncBinary = exports.AsyncBinary = void 0;
+    exports.route = exports.combineRawHeaders = exports.respond = exports.makeNodeRequestHandler = exports.xhr = exports.acceptsMethod = exports.acceptsComponents = exports.finalizeResponse = exports.deserializePayload = exports.deserializeStringPayload = exports.compareArrays = exports.serializePayload = exports.serializeStringPayload = exports.collectPayload = exports.EndpointError = exports.ServerResponse = exports.ClientRequest = exports.deserializeValue = exports.serializeValue = exports.Headers = exports.Options = exports.JSON = exports.Primitive = exports.Binary = exports.SyncBinary = exports.AsyncBinary = exports.DynamicRouteMatcher = exports.StaticRouteMatcher = exports.decodeUndeclaredHeaders = exports.decodeHeaderValue = exports.decodeHeaderValues = exports.decodeUndeclaredParameters = exports.decodeParameterValue = exports.decodeParameterValues = exports.encodeUndeclaredParameterPairs = exports.encodeParameterPairs = exports.escapeParameterValue = exports.escapeParameterKey = exports.encodeComponents = exports.escapeComponent = exports.encodeUndeclaredHeaderPairs = exports.encodeHeaderPairs = exports.escapeHeaderValue = exports.escapeHeaderKey = exports.splitHeaders = exports.combineParameters = exports.splitParameters = exports.combineComponents = exports.splitComponents = exports.decodeURIComponent = void 0;
+    exports.makeReadStreamResponse = exports.getContentTypeFromExtension = exports.parseRangeHeader = void 0;
+    function decodeURIComponent(string) {
+        try {
+            return globalThis.decodeURIComponent(string);
+        }
+        catch (error) { }
+    }
+    exports.decodeURIComponent = decodeURIComponent;
+    ;
+    function splitComponents(url) {
+        let components = new Array();
+        for (let part of url.split("?")[0].split("/").slice(1)) {
+            components.push(part);
+        }
+        return components;
+    }
+    exports.splitComponents = splitComponents;
+    ;
+    function combineComponents(components) {
+        return "/" + components.join("/");
+    }
+    exports.combineComponents = combineComponents;
+    ;
+    function splitParameters(url) {
+        let parameters = new Array();
+        let query = url.split("?").slice(1).join("?");
+        if (query !== "") {
+            for (let part of query.split("&")) {
+                let parts = part.split("=");
+                if (parts.length === 1) {
+                    let key = parts[0];
+                    let value = "";
+                    parameters.push([key, value]);
+                }
+                else {
+                    let key = parts[0];
+                    let value = parts.slice(1).join("=");
+                    parameters.push([key, value]);
+                }
+            }
+        }
+        return parameters;
+    }
+    exports.splitParameters = splitParameters;
+    ;
+    function combineParameters(parameters) {
+        let parts = parameters.map((parameters) => {
+            let key = parameters[0];
+            let value = parameters[1];
+            return `${key}=${value}`;
+        });
+        if (parts.length === 0) {
+            return "";
+        }
+        return `?${parts.join("&")}`;
+    }
+    exports.combineParameters = combineParameters;
+    ;
+    function splitHeaders(lines) {
+        return lines.map((part) => {
+            let parts = part.split(":");
+            if (parts.length === 1) {
+                let key = parts[0].toLowerCase();
+                let value = "";
+                return [key, value];
+            }
+            else {
+                let key = parts[0].toLowerCase();
+                let value = parts.slice(1).join(":").trim();
+                return [key, value];
+            }
+        });
+    }
+    exports.splitHeaders = splitHeaders;
+    ;
+    const RFC7320_DELIMITERS = "\"(),/:;<=>?@[\\]{}";
+    const RFC7320_WHITESPACE = "\t ";
+    // The specification (rfc7320) allows octets 33-126 and forbids delimiters. Octets 128-255 have been deprecated since rfc2616.
+    function escapeHeaderKey(string, alwaysEncode = "") {
+        return escapeHeaderValue(string, RFC7320_DELIMITERS + RFC7320_WHITESPACE + alwaysEncode);
+    }
+    exports.escapeHeaderKey = escapeHeaderKey;
+    ;
+    // The specification (rfc7320) allows octets 33-126 and whitespace. Octets 128-255 have been deprecated since rfc2616.
+    function escapeHeaderValue(string, alwaysEncode = "") {
+        return [...string]
+            .map((codePointString) => {
+            var _a;
+            if (!alwaysEncode.includes(codePointString) && codePointString !== "%") {
+                let codePoint = (_a = codePointString.codePointAt(0)) !== null && _a !== void 0 ? _a : 0;
+                if (codePoint >= 33 && codePoint <= 126) {
+                    return codePointString;
+                }
+                if (RFC7320_WHITESPACE.includes(codePointString)) {
+                    return codePointString;
+                }
+            }
+            return encodeURIComponent(codePointString);
+        })
+            .join("");
+    }
+    exports.escapeHeaderValue = escapeHeaderValue;
+    ;
+    function encodeHeaderPairs(key, values, plain) {
+        let pairs = new Array();
+        for (let value of values) {
+            let serialized = serializeValue(value, plain);
+            if (serialized !== undefined) {
+                if (plain) {
+                    pairs.push([
+                        escapeHeaderKey(key),
+                        escapeHeaderValue(serialized)
+                    ]);
+                }
+                else {
+                    pairs.push([
+                        escapeHeaderKey(key),
+                        escapeHeaderKey(serialized)
+                    ]);
+                }
+            }
+        }
+        return pairs;
+    }
+    exports.encodeHeaderPairs = encodeHeaderPairs;
+    ;
+    function encodeUndeclaredHeaderPairs(record, exclude) {
+        let pairs = new Array();
+        for (let [key, value] of Object.entries(record)) {
+            if (!exclude.includes(key) && value !== undefined) {
+                if (guards.String.is(value)) {
+                    pairs.push(...encodeHeaderPairs(key, [value], true));
+                }
+                else if (guards.Array.of(guards.String).is(value)) {
+                    pairs.push(...encodeHeaderPairs(key, value, true));
+                }
+                else {
+                    throw `Expected type of undeclared header "${key}" to be string or string[]!`;
+                }
+            }
+        }
+        return pairs;
+    }
+    exports.encodeUndeclaredHeaderPairs = encodeUndeclaredHeaderPairs;
+    ;
+    function escapeComponent(string) {
+        return encodeURIComponent(string);
+    }
+    exports.escapeComponent = escapeComponent;
+    ;
+    function encodeComponents(values, plain) {
+        let array = new Array();
+        for (let value of values) {
+            let serialized = serializeValue(value, plain);
+            if (serialized !== undefined) {
+                array.push(escapeComponent(serialized));
+            }
+        }
+        return array;
+    }
+    exports.encodeComponents = encodeComponents;
+    ;
+    function escapeParameterKey(string) {
+        return encodeURIComponent(string);
+    }
+    exports.escapeParameterKey = escapeParameterKey;
+    ;
+    function escapeParameterValue(string) {
+        return encodeURIComponent(string);
+    }
+    exports.escapeParameterValue = escapeParameterValue;
+    ;
+    function encodeParameterPairs(key, values, plain) {
+        let pairs = new Array();
+        for (let value of values) {
+            let serialized = serializeValue(value, plain);
+            if (serialized !== undefined) {
+                pairs.push([
+                    escapeParameterKey(key),
+                    escapeParameterValue(serialized)
+                ]);
+            }
+        }
+        return pairs;
+    }
+    exports.encodeParameterPairs = encodeParameterPairs;
+    ;
+    function encodeUndeclaredParameterPairs(record, exclude) {
+        let pairs = new Array();
+        for (let [key, value] of Object.entries(record)) {
+            if (!exclude.includes(key) && value !== undefined) {
+                if (guards.String.is(value)) {
+                    pairs.push(...encodeParameterPairs(key, [value], true));
+                }
+                else if (guards.Array.of(guards.String).is(value)) {
+                    pairs.push(...encodeParameterPairs(key, value, true));
+                }
+                else {
+                    throw `Expected type of undeclared parameter "${key}" to be string or string[]!`;
+                }
+            }
+        }
+        return pairs;
+    }
+    exports.encodeUndeclaredParameterPairs = encodeUndeclaredParameterPairs;
+    ;
+    function decodeParameterValues(pairs, key, plain) {
+        let values = new Array();
+        for (let pair of pairs) {
+            if (key === decodeURIComponent(pair[0])) {
+                let parts = pair[1].split(",");
+                for (let part of parts) {
+                    let value = deserializeValue(decodeURIComponent(part), plain);
+                    if (value === undefined) {
+                        throw `Expected parameter "${key}" to be properly encoded!`;
+                    }
+                    values.push(value);
+                }
+            }
+        }
+        return values;
+    }
+    exports.decodeParameterValues = decodeParameterValues;
+    ;
+    function decodeParameterValue(pairs, key, plain) {
+        let values = decodeParameterValues(pairs, key, plain);
+        if (values.length > 1) {
+            throw `Expected no more than one "${key}" parameter!`;
+        }
+        return values[0];
+    }
+    exports.decodeParameterValue = decodeParameterValue;
+    ;
+    function decodeUndeclaredParameters(pairs, exclude) {
+        let map = {};
+        for (let pair of pairs) {
+            let key = decodeURIComponent(pair[0]);
+            let value = decodeURIComponent(pair[1]);
+            if (key === undefined || value === undefined) {
+                throw `Expected undeclared parameter "${key}" to be properly encoded!`;
+            }
+            if (!exclude.includes(key)) {
+                let values = map[key];
+                if (values === undefined) {
+                    values = new Array();
+                    map[key] = values;
+                }
+                values.push(value);
+            }
+        }
+        let record = {};
+        for (let [key, value] of Object.entries(map)) {
+            if (value.length === 1) {
+                record[key] = value[0];
+            }
+            else {
+                record[key] = value;
+            }
+        }
+        return record;
+    }
+    exports.decodeUndeclaredParameters = decodeUndeclaredParameters;
+    ;
+    function decodeHeaderValues(pairs, key, plain) {
+        let values = new Array();
+        for (let pair of pairs) {
+            if (key === decodeURIComponent(pair[0])) {
+                let parts = pair[1].split(",");
+                for (let part of parts) {
+                    let value = deserializeValue(decodeURIComponent(part.trim()), plain);
+                    if (value === undefined) {
+                        throw `Expected header "${key}" to be properly encoded!`;
+                    }
+                    values.push(value);
+                }
+            }
+        }
+        return values;
+    }
+    exports.decodeHeaderValues = decodeHeaderValues;
+    ;
+    function decodeHeaderValue(pairs, key, plain) {
+        let values = decodeHeaderValues(pairs, key, plain);
+        if (values.length > 1) {
+            throw `Expected no more than one "${key}" header!`;
+        }
+        return values[0];
+    }
+    exports.decodeHeaderValue = decodeHeaderValue;
+    ;
+    function decodeUndeclaredHeaders(pairs, exclude) {
+        let map = {};
+        for (let pair of pairs) {
+            let key = decodeURIComponent(pair[0]);
+            let value = decodeURIComponent(pair[1]);
+            if (key === undefined || value === undefined) {
+                throw `Expected undeclared header "${key}" to be properly encoded!`;
+            }
+            if (!exclude.includes(key)) {
+                let values = map[key];
+                if (values === undefined) {
+                    values = new Array();
+                    map[key] = values;
+                }
+                values.push(value);
+            }
+        }
+        let record = {};
+        for (let [key, value] of Object.entries(map)) {
+            if (value.length === 1) {
+                record[key] = value[0];
+            }
+            else {
+                record[key] = value;
+            }
+        }
+        return record;
+    }
+    exports.decodeUndeclaredHeaders = decodeUndeclaredHeaders;
+    ;
+    ;
+    class StaticRouteMatcher {
+        constructor(string) {
+            this.string = string;
+            this.accepted = false;
+        }
+        acceptComponent(component) {
+            if (this.accepted) {
+                return false;
+            }
+            this.accepted = component === this.string;
+            return this.accepted;
+        }
+        getValue() {
+            return this.string;
+        }
+        isSatisfied() {
+            return this.accepted;
+        }
+    }
+    exports.StaticRouteMatcher = StaticRouteMatcher;
+    ;
+    class DynamicRouteMatcher {
+        constructor(minOccurences, maxOccurences, plain, guard) {
+            this.minOccurences = minOccurences;
+            this.maxOccurences = maxOccurences;
+            this.plain = plain;
+            this.guard = guard;
+            this.values = new Array();
+        }
+        acceptComponent(component) {
+            if (this.values.length >= this.maxOccurences) {
+                return false;
+            }
+            try {
+                let value = deserializeValue(component, this.plain);
+                if (this.guard.is(value)) {
+                    this.values.push(value);
+                    return true;
+                }
+            }
+            catch (error) { }
+            return false;
+        }
+        getValue() {
+            if (this.maxOccurences === 1) {
+                return this.values[0];
+            }
+            else {
+                return this.values;
+            }
+        }
+        isSatisfied() {
+            return this.minOccurences <= this.values.length && this.values.length <= this.maxOccurences;
+        }
+    }
+    exports.DynamicRouteMatcher = DynamicRouteMatcher;
+    ;
     exports.AsyncBinary = {
         as(subject, path = "") {
             if (subject != null) {
@@ -525,77 +916,9 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     };
     exports.Binary = guards.Union.of(exports.AsyncBinary, exports.SyncBinary);
     exports.Primitive = guards.Union.of(guards.Boolean, guards.Number, guards.String, guards.Undefined);
-    exports.JSON = guards.Union.of(guards.Boolean, guards.Null, guards.Number, guards.String, guards.Array.of(guards.Reference.of(() => exports.JSON)), guards.Record.of(guards.Reference.of(() => exports.JSON)), guards.Undefined);
+    exports.JSON = guards.Group.of(guards.Union.of(guards.Boolean, guards.Null, guards.Number, guards.String, guards.Array.of(guards.Reference.of(() => exports.JSON)), guards.Record.of(guards.Reference.of(() => exports.JSON)), guards.Undefined), "JSON");
     exports.Options = guards.Record.of(exports.JSON);
     exports.Headers = guards.Record.of(exports.JSON);
-    function serializeComponents(components) {
-        return "/" + components
-            .map((component) => {
-            return encodeURIComponent(component);
-        })
-            .join("/");
-    }
-    exports.serializeComponents = serializeComponents;
-    ;
-    function appendKeyValuePair(pairs, key, value, plain) {
-        let serialized = serializeValue(value, plain);
-        if (serialized !== undefined) {
-            pairs.push([key, serialized]);
-        }
-    }
-    exports.appendKeyValuePair = appendKeyValuePair;
-    ;
-    function extractKeyValuePairs(record, exclude) {
-        let pairs = new Array();
-        for (let [key, value] of Object.entries(record)) {
-            if (!exclude.includes(key) && value !== undefined) {
-                if (guards.String.is(value)) {
-                    pairs.push([key, value]);
-                }
-                else {
-                    throw `Expected value of undeclared "${key}" to be a string!`;
-                }
-            }
-        }
-        return pairs;
-    }
-    exports.extractKeyValuePairs = extractKeyValuePairs;
-    ;
-    function combineKeyValuePairs(pairs) {
-        let record = {};
-        for (let pair of pairs) {
-            record[pair[0]] = pair[1];
-        }
-        return record;
-    }
-    exports.combineKeyValuePairs = combineKeyValuePairs;
-    ;
-    function serializeParameters(parameters) {
-        let parts = parameters.map((parameters) => {
-            let key = encodeURIComponent(parameters[0]);
-            let value = encodeURIComponent(parameters[1]);
-            return `${key}=${value}`;
-        });
-        if (parts.length === 0) {
-            return "";
-        }
-        return `?${parts.join("&")}`;
-    }
-    exports.serializeParameters = serializeParameters;
-    ;
-    function getValue(pairs, key, plain) {
-        for (let pair of pairs) {
-            if (pair[0] === key) {
-                try {
-                    let value = pair[1];
-                    return deserializeValue(value, plain);
-                }
-                catch (error) { }
-            }
-        }
-    }
-    exports.getValue = getValue;
-    ;
     function serializeValue(value, plain) {
         if (value === undefined) {
             return;
@@ -605,63 +928,20 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     exports.serializeValue = serializeValue;
     ;
     function deserializeValue(value, plain) {
-        if (value === undefined) {
-            return;
+        if (value === undefined || plain) {
+            return value;
         }
-        return plain ? value : globalThis.JSON.parse(value);
+        try {
+            return globalThis.JSON.parse(value);
+        }
+        catch (error) { }
     }
     exports.deserializeValue = deserializeValue;
     ;
-    function getComponents(url) {
-        return url.split("?")[0].split("/").map((part) => {
-            return decodeURIComponent(part);
-        }).slice(1);
-    }
-    exports.getComponents = getComponents;
-    ;
-    function getParameters(url) {
-        let query = url.split("?").slice(1).join("?");
-        return query === "" ? [] : query.split("&").map((part) => {
-            let parts = part.split("=");
-            if (parts.length === 1) {
-                let key = decodeURIComponent(parts[0]);
-                let value = "";
-                return [key, value];
-            }
-            else {
-                let key = decodeURIComponent(parts[0]);
-                let value = decodeURIComponent(parts.slice(1).join("="));
-                return [key, value];
-            }
-        });
-    }
-    exports.getParameters = getParameters;
-    ;
-    function getHeaders(headers) {
-        return headers.map((part) => {
-            let parts = part.split(":");
-            if (parts.length === 1) {
-                let key = parts[0].toLowerCase();
-                let value = "";
-                return [key, value];
-            }
-            else {
-                let key = parts[0].toLowerCase();
-                let value = parts.slice(1).join(":").trim();
-                return [key, value];
-            }
-        });
-    }
-    exports.getHeaders = getHeaders;
-    ;
-    function isPayloadBinary(payload) {
-        return typeof payload !== "string" && exports.Binary.is(payload);
-    }
-    exports.isPayloadBinary = isPayloadBinary;
-    ;
     class ClientRequest {
-        constructor(request, auxillary) {
+        constructor(request, collect, auxillary) {
             this.request = request;
+            this.collect = collect;
             this.auxillary = auxillary;
         }
         options() {
@@ -678,7 +958,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                     return this.collectedPayload;
                 }
                 let payload = this.request.payload;
-                let collectedPayload = (isPayloadBinary(payload) ? yield collectPayload(payload) : payload);
+                let collectedPayload = (this.collect ? yield collectPayload(payload) : payload);
                 this.collectedPayload = collectedPayload;
                 return collectedPayload;
             });
@@ -690,8 +970,9 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     exports.ClientRequest = ClientRequest;
     ;
     class ServerResponse {
-        constructor(response) {
+        constructor(response, collect) {
             this.response = response;
+            this.collect = collect;
         }
         status() {
             let status = this.response.status;
@@ -707,7 +988,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                     return this.collectedPayload;
                 }
                 let payload = this.response.payload;
-                let collectedPayload = (isPayloadBinary(payload) ? yield collectPayload(payload) : payload);
+                let collectedPayload = (this.collect ? yield collectPayload(payload) : payload);
                 this.collectedPayload = collectedPayload;
                 return collectedPayload;
             });
@@ -778,19 +1059,37 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     exports.serializeStringPayload = serializeStringPayload;
     ;
     function serializePayload(payload) {
-        if (payload === undefined) {
+        let serialized = serializeValue(payload, false);
+        if (serialized === undefined) {
             return [];
         }
-        let string = globalThis.JSON.stringify(payload);
-        return serializeStringPayload(string);
+        return serializeStringPayload(serialized);
     }
     exports.serializePayload = serializePayload;
+    ;
+    function compareArrays(one, two) {
+        if (one.length !== two.length) {
+            return false;
+        }
+        for (let i = 0; i < one.length; i++) {
+            if (one[i] !== two[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    exports.compareArrays = compareArrays;
     ;
     function deserializeStringPayload(binary) {
         return __awaiter(this, void 0, void 0, function* () {
             let buffer = yield collectPayload(binary);
             let decoder = new TextDecoder();
             let string = decoder.decode(buffer);
+            let encoder = new TextEncoder();
+            let encoded = encoder.encode(string);
+            if (!compareArrays(buffer, encoded)) {
+                throw `Expected payload to be UTF-8 encoded!`;
+            }
             return string;
         });
     }
@@ -799,7 +1098,14 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     function deserializePayload(binary) {
         return __awaiter(this, void 0, void 0, function* () {
             let string = yield deserializeStringPayload(binary);
-            return string === "" ? undefined : globalThis.JSON.parse(string);
+            if (string === "") {
+                return;
+            }
+            let value = deserializeValue(string, false);
+            if (value === undefined) {
+                throw `Expected payload to be JSON encoded!`;
+            }
+            return value;
         });
     }
     exports.deserializePayload = deserializePayload;
@@ -819,16 +1125,35 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     }
     exports.finalizeResponse = finalizeResponse;
     ;
-    function acceptsComponents(one, two) {
-        if (one.length !== two.length) {
+    function acceptsComponents(components, matchers) {
+        let currentMatcher = 0;
+        outer: for (let component of components) {
+            let decoded = decodeURIComponent(component);
+            if (decoded === undefined) {
+                throw `Expected component to be properly encoded!`;
+            }
+            inner: for (let matcher of matchers.slice(currentMatcher)) {
+                if (matcher.acceptComponent(decoded)) {
+                    continue outer;
+                }
+                else {
+                    if (matcher.isSatisfied()) {
+                        currentMatcher += 1;
+                        continue inner;
+                    }
+                    else {
+                        break outer;
+                    }
+                }
+            }
+            break outer;
+        }
+        if (currentMatcher >= matchers.length) {
             return false;
         }
-        let length = one.length;
-        for (let i = 0; i < length; i++) {
-            if (two[i][0] === "") {
-                if (one[i] !== two[i][1]) {
-                    return false;
-                }
+        for (let matcher of matchers.slice(currentMatcher)) {
+            if (!matcher.isSatisfied()) {
+                return false;
             }
         }
         return true;
@@ -847,7 +1172,8 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
             xhr.onabort = reject;
             xhr.onload = () => {
                 let status = xhr.status;
-                let headers = getHeaders(xhr.getAllResponseHeaders().split("\r\n").slice(0, -1));
+                // Header values for the same header name are joined by he XHR implementation.
+                let headers = splitHeaders(xhr.getAllResponseHeaders().split("\r\n").slice(0, -1));
                 let payload = [new Uint8Array(xhr.response)];
                 resolve({
                     status,
@@ -856,11 +1182,12 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                 });
             };
             let url = urlPrefix !== null && urlPrefix !== void 0 ? urlPrefix : "";
-            url += serializeComponents(raw.components);
-            url += serializeParameters(raw.parameters);
+            url += combineComponents(raw.components);
+            url += combineParameters(raw.parameters);
             xhr.open(raw.method, url, true);
             xhr.responseType = "arraybuffer";
             for (let header of raw.headers) {
+                // Header values for the same header name are joined by he XHR implementation.
                 xhr.setRequestHeader(header[0], header[1]);
             }
             xhr.send(yield collectPayload(raw.payload));
@@ -876,15 +1203,22 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 let headers = {};
                 for (let header of raw.headers) {
-                    headers[header[0]] = header[1];
+                    let key = header[0];
+                    let value = header[1];
+                    let values = headers[key];
+                    if (values === undefined) {
+                        values = new Array();
+                        headers[key] = values;
+                    }
+                    values.push(value);
                 }
                 let url = urlPrefix !== null && urlPrefix !== void 0 ? urlPrefix : "";
-                url += serializeComponents(raw.components);
-                url += serializeParameters(raw.parameters);
+                url += combineComponents(raw.components);
+                url += combineParameters(raw.parameters);
                 let request = lib.request(url, Object.assign(Object.assign({}, options), { method: raw.method, headers: headers }), (response) => {
                     var _a;
                     let status = (_a = response.statusCode) !== null && _a !== void 0 ? _a : 200;
-                    let headers = getHeaders(combineRawHeaders(response.rawHeaders));
+                    let headers = splitHeaders(combineRawHeaders(response.rawHeaders));
                     let payload = {
                         [Symbol.asyncIterator]: () => response[Symbol.asyncIterator]()
                     };
@@ -901,14 +1235,16 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     ;
     function respond(httpResponse, raw) {
         var e_2, _a;
+        var _b, _c, _d;
         return __awaiter(this, void 0, void 0, function* () {
-            for (let header of raw.headers) {
-                httpResponse.setHeader(header[0], header[1]);
+            let rawHeaders = new Array();
+            for (let header of (_b = raw.headers) !== null && _b !== void 0 ? _b : []) {
+                rawHeaders.push(...header);
             }
-            httpResponse.writeHead(raw.status);
+            httpResponse.writeHead((_c = raw.status) !== null && _c !== void 0 ? _c : 200, rawHeaders);
             try {
-                for (var _b = __asyncValues(raw.payload), _c; _c = yield _b.next(), !_c.done;) {
-                    let chunk = _c.value;
+                for (var _e = __asyncValues((_d = raw.payload) !== null && _d !== void 0 ? _d : []), _f; _f = yield _e.next(), !_f.done;) {
+                    let chunk = _f.value;
                     if (!httpResponse.write(chunk)) {
                         yield new Promise((resolve, reject) => {
                             httpResponse.once("drain", resolve);
@@ -921,8 +1257,8 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
             }
             finally {
                 try {
-                    if (_c && !_c.done && (_a = _b.return))
-                        yield _a.call(_b);
+                    if (_f && !_f.done && (_a = _e.return))
+                        yield _a.call(_e);
                 }
                 finally {
                     if (e_2)
@@ -955,42 +1291,38 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                 throw `Expected url "${url}" to have prefix "${urlPrefix}"!`;
             }
             url = url.slice(urlPrefix === null || urlPrefix === void 0 ? void 0 : urlPrefix.length);
-            let components = getComponents(url);
-            let parameters = getParameters(url);
-            let headers = getHeaders(combineRawHeaders(httpRequest.rawHeaders));
-            let payload = {
-                [Symbol.asyncIterator]: () => httpRequest[Symbol.asyncIterator]()
-            };
-            let socket = httpRequest.socket;
-            let raw = {
-                method,
-                components,
-                parameters,
-                headers,
-                payload
-            };
-            let auxillary = {
-                socket
-            };
-            let filteredEndpoints = endpoints.map((endpoint) => endpoint(raw, auxillary));
-            filteredEndpoints = filteredEndpoints.filter((endpoint) => endpoint.acceptsComponents());
-            if (filteredEndpoints.length === 0) {
-                return respond(httpResponse, {
-                    status: 404,
-                    headers: [],
-                    payload: []
-                });
-            }
-            filteredEndpoints = filteredEndpoints.filter((endpoint) => endpoint.acceptsMethod());
-            if (filteredEndpoints.length === 0) {
-                return respond(httpResponse, {
-                    status: 405,
-                    headers: [],
-                    payload: []
-                });
-            }
-            let endpoint = filteredEndpoints[0];
             try {
+                let components = splitComponents(url);
+                let parameters = splitParameters(url);
+                let headers = splitHeaders(combineRawHeaders(httpRequest.rawHeaders));
+                let payload = {
+                    [Symbol.asyncIterator]: () => httpRequest[Symbol.asyncIterator]()
+                };
+                let socket = httpRequest.socket;
+                let raw = {
+                    method,
+                    components,
+                    parameters,
+                    headers,
+                    payload
+                };
+                let auxillary = {
+                    socket
+                };
+                let filteredEndpoints = endpoints.map((endpoint) => endpoint(raw, auxillary));
+                filteredEndpoints = filteredEndpoints.filter((endpoint) => endpoint.acceptsComponents());
+                if (filteredEndpoints.length === 0) {
+                    return respond(httpResponse, {
+                        status: 404
+                    });
+                }
+                filteredEndpoints = filteredEndpoints.filter((endpoint) => endpoint.acceptsMethod());
+                if (filteredEndpoints.length === 0) {
+                    return respond(httpResponse, {
+                        status: 405
+                    });
+                }
+                let endpoint = filteredEndpoints[0];
                 let valid = yield endpoint.validateRequest();
                 try {
                     let handled = yield valid.handleRequest();
@@ -999,35 +1331,31 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
                         return yield respond(httpResponse, raw);
                     }
                     catch (error) {
-                        let payload = serializeStringPayload(String(error));
                         return respond(httpResponse, {
                             status: 500,
-                            headers: [],
-                            payload: payload
+                            payload: serializeStringPayload(String(error))
                         });
                     }
                 }
                 catch (error) {
-                    let response = {
-                        status: 500,
-                        headers: [],
-                        payload: []
-                    };
                     if (Number.isInteger(error) && error >= 100 && error <= 999) {
-                        response.status = error;
+                        return respond(httpResponse, {
+                            status: error
+                        });
                     }
-                    else if (error instanceof EndpointError) {
-                        response = error.getResponse();
+                    if (error instanceof EndpointError) {
+                        let raw = error.getResponse();
+                        return respond(httpResponse, raw);
                     }
-                    return respond(httpResponse, response);
+                    return respond(httpResponse, {
+                        status: 500
+                    });
                 }
             }
             catch (error) {
-                let payload = serializeStringPayload(String(error));
                 return respond(httpResponse, {
                     status: 400,
-                    headers: [],
-                    payload: payload
+                    payload: serializeStringPayload(String(error))
                 });
             }
         });
@@ -1181,32 +1509,32 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
         };
         Autoguard.Requests = {
             "getFood": autoguard.guards.Object.of({
-                "options": autoguard.guards.Intersection.of(autoguard.api.Options, autoguard.guards.Object.of({
+                "options": autoguard.guards.Intersection.of(autoguard.guards.Object.of({
                     "food_id": autoguard.guards.Number
-                })),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
-                "payload": autoguard.guards.Union.of(autoguard.guards.Undefined)
+                }), autoguard.api.Options),
+                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
+                "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             }),
             "getStaticContent": autoguard.guards.Object.of({
-                "options": autoguard.guards.Intersection.of(autoguard.api.Options, autoguard.guards.Object.of({
+                "options": autoguard.guards.Intersection.of(autoguard.guards.Object.of({
                     "filename": autoguard.guards.String
-                })),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
-                "payload": autoguard.guards.Union.of(autoguard.guards.Undefined)
+                }), autoguard.api.Options),
+                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
+                "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             })
         };
         Autoguard.Responses = {
             "getFood": autoguard.guards.Object.of({
-                "status": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Number),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
+                "status": autoguard.guards.Union.of(autoguard.guards.Number, autoguard.guards.Undefined),
+                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
                 "payload": autoguard.guards.Object.of({
                     "food": autoguard.guards.Reference.of(() => exports.Food)
                 })
             }),
             "getStaticContent": autoguard.guards.Object.of({
-                "status": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Number),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Undefined, autoguard.guards.Intersection.of(autoguard.api.Headers, autoguard.guards.Object.of({}))),
-                "payload": autoguard.api.Binary
+                "status": autoguard.guards.Union.of(autoguard.guards.Number, autoguard.guards.Undefined),
+                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
+                "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
             })
         };
     })(Autoguard = exports.Autoguard || (exports.Autoguard = {}));
@@ -1243,51 +1571,53 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
     exports.makeClient = void 0;
     const makeClient = (options) => ({
         "getFood": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e, _f;
             let guard = shared.Autoguard.Requests["getFood"];
             guard.as(request, "request");
             let method = "GET";
             let components = new Array();
-            components.push(decodeURIComponent("food"));
-            components.push((_a = autoguard.api.serializeValue(request.options["food_id"], false)) !== null && _a !== void 0 ? _a : "");
-            components.push(decodeURIComponent(""));
+            components.push("food");
+            components.push(...autoguard.api.encodeComponents([(_a = request.options) === null || _a === void 0 ? void 0 : _a["food_id"]], false));
+            components.push("");
             let parameters = new Array();
-            parameters.push(...autoguard.api.extractKeyValuePairs((_b = request.options) !== null && _b !== void 0 ? _b : {}, [...["food_id"], ...parameters.map((parameter) => parameter[0])]));
+            parameters.push(...autoguard.api.encodeUndeclaredParameterPairs((_b = request.options) !== null && _b !== void 0 ? _b : {}, [...["food_id"], ...parameters.map((parameter) => parameter[0])]));
             let headers = new Array();
-            headers.push(...autoguard.api.extractKeyValuePairs((_c = request.headers) !== null && _c !== void 0 ? _c : {}, headers.map((header) => header[0])));
-            let payload = autoguard.api.serializePayload(request.payload);
-            let requestHandler = (_d = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _d !== void 0 ? _d : autoguard.api.xhr;
+            headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_c = request.headers) !== null && _c !== void 0 ? _c : {}, headers.map((header) => header[0])));
+            let payload = (_d = request.payload) !== null && _d !== void 0 ? _d : [];
+            let requestHandler = (_e = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _e !== void 0 ? _e : autoguard.api.xhr;
             let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
             {
                 let status = raw.status;
-                let headers = autoguard.api.combineKeyValuePairs(raw.headers);
+                let headers = {};
+                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_f = raw.headers) !== null && _f !== void 0 ? _f : {}, Object.keys(headers)));
                 let payload = yield autoguard.api.deserializePayload(raw.payload);
                 let guard = shared.Autoguard.Responses["getFood"];
                 let response = guard.as({ status, headers, payload }, "response");
-                return new autoguard.api.ServerResponse(response);
+                return new autoguard.api.ServerResponse(response, false);
             }
         }),
         "getStaticContent": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _e, _f, _g, _h;
+            var _g, _h, _j, _k, _l, _m;
             let guard = shared.Autoguard.Requests["getStaticContent"];
             guard.as(request, "request");
             let method = "GET";
             let components = new Array();
-            components.push((_e = autoguard.api.serializeValue(request.options["filename"], true)) !== null && _e !== void 0 ? _e : "");
+            components.push(...autoguard.api.encodeComponents([(_g = request.options) === null || _g === void 0 ? void 0 : _g["filename"]], true));
             let parameters = new Array();
-            parameters.push(...autoguard.api.extractKeyValuePairs((_f = request.options) !== null && _f !== void 0 ? _f : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
+            parameters.push(...autoguard.api.encodeUndeclaredParameterPairs((_h = request.options) !== null && _h !== void 0 ? _h : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
             let headers = new Array();
-            headers.push(...autoguard.api.extractKeyValuePairs((_g = request.headers) !== null && _g !== void 0 ? _g : {}, headers.map((header) => header[0])));
-            let payload = autoguard.api.serializePayload(request.payload);
-            let requestHandler = (_h = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _h !== void 0 ? _h : autoguard.api.xhr;
+            headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_j = request.headers) !== null && _j !== void 0 ? _j : {}, headers.map((header) => header[0])));
+            let payload = (_k = request.payload) !== null && _k !== void 0 ? _k : [];
+            let requestHandler = (_l = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _l !== void 0 ? _l : autoguard.api.xhr;
             let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
             {
                 let status = raw.status;
-                let headers = autoguard.api.combineKeyValuePairs(raw.headers);
+                let headers = {};
+                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_m = raw.headers) !== null && _m !== void 0 ? _m : {}, Object.keys(headers)));
                 let payload = raw.payload;
                 let guard = shared.Autoguard.Responses["getStaticContent"];
                 let response = guard.as({ status, headers, payload }, "response");
-                return new autoguard.api.ServerResponse(response);
+                return new autoguard.api.ServerResponse(response, true);
             }
         }),
     });
