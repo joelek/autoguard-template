@@ -1,4 +1,4 @@
-define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/serialization", ["require", "exports"], function (require, exports) {
+define("node_modules/@joelek/ts-autoguard/dist/lib/serialization", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MessageSerializer = exports.MessageGuardError = void 0;
@@ -53,7 +53,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/serialization", ["
     exports.MessageSerializer = MessageSerializer;
     ;
 });
-define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require", "exports", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/serialization"], function (require, exports, serialization) {
+define("node_modules/@joelek/ts-autoguard/dist/lib/guards", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib/serialization"], function (require, exports, serialization) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -454,7 +454,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", ["require
         }
     };
 });
-define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", "exports", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards"], function (require, exports, guards) {
+define("node_modules/@joelek/ts-autoguard/dist/lib/api", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib/guards"], function (require, exports, guards) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -490,7 +490,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.route = exports.combineRawHeaders = exports.respond = exports.makeNodeRequestHandler = exports.xhr = exports.acceptsMethod = exports.acceptsComponents = exports.finalizeResponse = exports.deserializePayload = exports.deserializeStringPayload = exports.compareArrays = exports.serializePayload = exports.serializeStringPayload = exports.collectPayload = exports.EndpointError = exports.ServerResponse = exports.ClientRequest = exports.deserializeValue = exports.serializeValue = exports.Headers = exports.Options = exports.JSON = exports.Primitive = exports.Binary = exports.SyncBinary = exports.AsyncBinary = exports.DynamicRouteMatcher = exports.StaticRouteMatcher = exports.decodeUndeclaredHeaders = exports.decodeHeaderValue = exports.decodeHeaderValues = exports.decodeUndeclaredParameters = exports.decodeParameterValue = exports.decodeParameterValues = exports.encodeUndeclaredParameterPairs = exports.encodeParameterPairs = exports.escapeParameterValue = exports.escapeParameterKey = exports.encodeComponents = exports.escapeComponent = exports.encodeUndeclaredHeaderPairs = exports.encodeHeaderPairs = exports.escapeHeaderValue = exports.escapeHeaderKey = exports.splitHeaders = exports.combineParameters = exports.splitParameters = exports.combineComponents = exports.splitComponents = exports.decodeURIComponent = void 0;
-    exports.makeReadStreamResponse = exports.getContentTypeFromExtension = exports.parseRangeHeader = void 0;
+    exports.makeReadStreamResponse = exports.makeDirectoryListing = exports.getContentTypeFromExtension = exports.parseRangeHeader = void 0;
     function decodeURIComponent(string) {
         try {
             return globalThis.decodeURIComponent(string);
@@ -1444,11 +1444,55 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
             ".jpeg": "image/jpeg",
             ".js": "text/javascript",
             ".json": "application/json",
-            ".png": "image/png"
+            ".png": "image/png",
+            ".svg": "image/svg+xml"
         };
         return extensions[extension];
     }
     exports.getContentTypeFromExtension = getContentTypeFromExtension;
+    ;
+    function makeDirectoryListing(pathPrefix, pathSuffix, request) {
+        let libfs = require("fs");
+        let libpath = require("path");
+        let pathSuffixParts = libpath.normalize(pathSuffix).split(libpath.sep);
+        if (pathSuffixParts[0] === "..") {
+            throw 400;
+        }
+        if (pathSuffixParts[pathSuffixParts.length - 1] !== "") {
+            pathSuffixParts.push("");
+        }
+        let fullPath = libpath.join(pathPrefix, ...pathSuffixParts);
+        if (!libfs.existsSync(fullPath) || !libfs.statSync(fullPath).isDirectory()) {
+            throw 404;
+        }
+        let entries = libfs.readdirSync(fullPath, { withFileTypes: true });
+        let directories = entries
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => {
+            return {
+                name: entry.name
+            };
+        })
+            .sort((one, two) => one.name.localeCompare(two.name));
+        let files = entries
+            .filter((entry) => entry.isFile())
+            .map((entry) => {
+            let stat = libfs.statSync(libpath.join(fullPath, entry.name));
+            return {
+                name: entry.name,
+                size: stat.size,
+                timestamp: stat.mtime.valueOf()
+            };
+        })
+            .sort((one, two) => one.name.localeCompare(two.name));
+        let components = pathSuffixParts;
+        return {
+            components,
+            directories,
+            files
+        };
+    }
+    exports.makeDirectoryListing = makeDirectoryListing;
     ;
     function makeReadStreamResponse(pathPrefix, pathSuffix, request) {
         let libfs = require("fs");
@@ -1482,7 +1526,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", ["require", 
     exports.makeReadStreamResponse = makeReadStreamResponse;
     ;
 });
-define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/api", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/guards", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/serialization"], function (require, exports, api, guards, serialization) {
+define("node_modules/@joelek/ts-autoguard/dist/lib/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib/api", "node_modules/@joelek/ts-autoguard/dist/lib/guards", "node_modules/@joelek/ts-autoguard/dist/lib/serialization"], function (require, exports, api, guards, serialization) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.serialization = exports.guards = exports.api = void 0;
@@ -1492,7 +1536,7 @@ define("node_modules/@joelek/ts-autoguard/build/autoguard-lib/index", ["require"
     exports.guards = guards;
     exports.serialization = serialization;
 });
-define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/index"], function (require, exports, autoguard) {
+define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib/index"], function (require, exports, autoguard) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // This file was auto-generated by @joelek/ts-autoguard. Edit at own risk.
@@ -1540,7 +1584,7 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
     })(Autoguard = exports.Autoguard || (exports.Autoguard = {}));
     ;
 });
-define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/index", "build/shared/api/index"], function (require, exports, autoguard, shared) {
+define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib/index", "build/shared/api/index"], function (require, exports, autoguard, shared) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // This file was auto-generated by @joelek/ts-autoguard. Edit at own risk.
@@ -1651,7 +1695,7 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
     };
     exports.makeServer = makeServer;
 });
-define("build/server/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/build/autoguard-lib/index", "http", "build/shared/api/server"], function (require, exports, autoguard, libhttp, libserver) {
+define("build/server/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib/index", "http", "build/shared/api/server"], function (require, exports, autoguard, libhttp, libserver) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
