@@ -1,6 +1,6 @@
 # autoguard-template
 
-Template project for web application using Autoguard.
+Template project for full-stack TypeScript web application using Autoguard.
 
 ## Sponsorship
 
