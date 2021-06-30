@@ -3,20 +3,20 @@
 		"composite": true,
 		"module": "commonjs",
 		"outDir": "./build/",
-		"rootDir": "./projects/",
+		"rootDir": "./source/",
 		"strict": true,
 		"target": "es6"
 	},
 	"include": [],
 	"references": [
 		{
-			"path": "./projects/client/"
+			"path": "./source/client/"
 		},
 		{
-			"path": "./projects/server/"
+			"path": "./source/server/"
 		},
 		{
-			"path": "./projects/shared/"
+			"path": "./source/shared/"
 		}
 	]
 }
