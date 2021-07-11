@@ -1,4 +1,4 @@
-import * as autoguard from "@joelek/ts-autoguard";
+import * as autoguard from "@joelek/ts-autoguard/dist/lib-server";
 import * as libhttp from "http";
 import * as libserver from "../shared/api/server";
 
