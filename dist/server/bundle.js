@@ -1170,7 +1170,10 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
         return (raw, urlPrefix) => {
             let lib = (urlPrefix !== null && urlPrefix !== void 0 ? urlPrefix : "").startsWith("https:") ? libhttps : libhttp;
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-                let headers = {};
+                let payload = yield shared.api.collectPayload(raw.payload);
+                let headers = {
+                    "Content-Length": [`${payload.length}`]
+                };
                 for (let header of raw.headers) {
                     let key = header[0];
                     let value = header[1];
@@ -1195,7 +1198,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
                 });
                 request.on("abort", reject);
                 request.on("error", reject);
-                request.write(yield shared.api.collectPayload(raw.payload));
+                request.write(payload);
                 request.end();
             }));
         };
@@ -1242,18 +1245,15 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     }
     exports.acceptsMethod = acceptsMethod;
     ;
-    function finalizeResponse(raw, defaultContentType) {
-        let headers = raw.headers;
-        let contentType = headers.find((header) => {
-            return header[0].toLowerCase() === "content-type";
+    function finalizeResponse(raw, defaultHeaders) {
+        let headersToAppend = defaultHeaders.filter((defaultHeader) => {
+            let found = raw.headers.find((header) => header[0].toLowerCase() === defaultHeader[0].toLowerCase());
+            return found === undefined;
         });
-        if (contentType === undefined) {
-            headers = [
-                ...headers,
-                ["Content-Type", defaultContentType]
-            ];
-        }
-        return Object.assign(Object.assign({}, raw), { headers });
+        return Object.assign(Object.assign({}, raw), { headers: [
+                ...raw.headers,
+                ...headersToAppend
+            ] });
     }
     exports.finalizeResponse = finalizeResponse;
     ;
@@ -1297,15 +1297,16 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     }
     exports.respond = respond;
     ;
-    function route(endpoints, httpRequest, httpResponse, urlPrefix = "") {
-        var _a, _b;
+    function route(endpoints, httpRequest, httpResponse, serverOptions) {
+        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
-            let method = (_a = httpRequest.method) !== null && _a !== void 0 ? _a : "GET";
-            let url = (_b = httpRequest.url) !== null && _b !== void 0 ? _b : "";
+            let urlPrefix = (_a = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.urlPrefix) !== null && _a !== void 0 ? _a : "";
+            let method = (_b = httpRequest.method) !== null && _b !== void 0 ? _b : "GET";
+            let url = (_c = httpRequest.url) !== null && _c !== void 0 ? _c : "";
             if (!url.startsWith(urlPrefix)) {
                 throw `Expected url "${url}" to have prefix "${urlPrefix}"!`;
             }
-            url = url.slice(urlPrefix === null || urlPrefix === void 0 ? void 0 : urlPrefix.length);
+            url = url.slice(urlPrefix.length);
             try {
                 let components = shared.api.splitComponents(url);
                 let parameters = shared.api.splitParameters(url);
@@ -1377,6 +1378,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     }
     exports.route = route;
     ;
+    // TODO: Move to Nexus in v6.
     function parseRangeHeader(value, size) {
         var _a, _b, _c;
         if (value === undefined) {
@@ -1450,6 +1452,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     }
     exports.parseRangeHeader = parseRangeHeader;
     ;
+    // TODO: Move to Nexus in v6.
     function getContentTypeFromExtension(extension) {
         let extensions = {
             ".css": "text/css",
@@ -1466,6 +1469,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     }
     exports.getContentTypeFromExtension = getContentTypeFromExtension;
     ;
+    // TODO: Move to Nexus in v6.
     function makeDirectoryListing(pathPrefix, pathSuffix, request) {
         let pathSuffixParts = libpath.normalize(pathSuffix).split(libpath.sep);
         if (pathSuffixParts[0] === "..") {
@@ -1507,6 +1511,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     }
     exports.makeDirectoryListing = makeDirectoryListing;
     ;
+    // TODO: Move to Nexus in v6.
     function makeReadStreamResponse(pathPrefix, pathSuffix, request) {
         if (libpath.normalize(pathSuffix).split(libpath.sep)[0] === "..") {
             throw 400;
@@ -1639,7 +1644,7 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.makeServer = void 0;
-    const makeServer = (routes, options) => {
+    const makeServer = (routes, serverOptions) => {
         let endpoints = new Array();
         endpoints.push((raw, auxillary) => {
             let method = "GET";
@@ -1665,14 +1670,16 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                             let response = yield routes["getFood"](new autoguard.api.ClientRequest(request, true, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
-                                    var _c, _d;
+                                    var _c, _d, _e, _f;
                                     let guard = shared.Autoguard.Responses["getFood"];
                                     guard.as(response, "response");
                                     let status = (_c = response.status) !== null && _c !== void 0 ? _c : 200;
                                     let headers = new Array();
                                     headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_d = response.headers) !== null && _d !== void 0 ? _d : {}, headers.map((header) => header[0])));
                                     let payload = autoguard.api.serializePayload(response.payload);
-                                    return autoguard.api.finalizeResponse({ status, headers, payload }, "application/json; charset=utf-8");
+                                    let defaultHeaders = (_f = (_e = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.defaultHeaders) === null || _e === void 0 ? void 0 : _e.slice()) !== null && _f !== void 0 ? _f : [];
+                                    defaultHeaders.push(["Content-Type", "application/json; charset=utf-8"]);
+                                    return autoguard.api.finalizeResponse({ status, headers, payload }, defaultHeaders);
                                 })
                             };
                         })
@@ -1702,14 +1709,16 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                             let response = yield routes["getStaticContent"](new autoguard.api.ClientRequest(request, true, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
-                                    var _c, _d, _e;
+                                    var _c, _d, _e, _f, _g;
                                     let guard = shared.Autoguard.Responses["getStaticContent"];
                                     guard.as(response, "response");
                                     let status = (_c = response.status) !== null && _c !== void 0 ? _c : 200;
                                     let headers = new Array();
                                     headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_d = response.headers) !== null && _d !== void 0 ? _d : {}, headers.map((header) => header[0])));
                                     let payload = (_e = response.payload) !== null && _e !== void 0 ? _e : [];
-                                    return autoguard.api.finalizeResponse({ status, headers, payload }, "application/octet-stream");
+                                    let defaultHeaders = (_g = (_f = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.defaultHeaders) === null || _f === void 0 ? void 0 : _f.slice()) !== null && _g !== void 0 ? _g : [];
+                                    defaultHeaders.push(["Content-Type", "application/octet-stream"]);
+                                    return autoguard.api.finalizeResponse({ status, headers, payload }, defaultHeaders);
                                 })
                             };
                         })
@@ -1717,7 +1726,7 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                 })
             };
         });
-        return (request, response) => autoguard.api.route(endpoints, request, response, options === null || options === void 0 ? void 0 : options.urlPrefix);
+        return (request, response) => autoguard.api.route(endpoints, request, response, serverOptions);
     };
     exports.makeServer = makeServer;
 });

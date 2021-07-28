@@ -1040,7 +1040,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exp
         });
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.xhr = exports.ServerResponse = void 0;
+    exports.finalizeRequest = exports.xhr = exports.ServerResponse = void 0;
     __exportStar(api_1, exports);
     class ServerResponse {
         constructor(response, collect) {
@@ -1099,6 +1099,18 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exp
         }));
     }
     exports.xhr = xhr;
+    ;
+    function finalizeRequest(raw, defaultHeaders) {
+        let headersToAppend = defaultHeaders.filter((defaultHeader) => {
+            let found = raw.headers.find((header) => header[0].toLowerCase() === defaultHeader[0].toLowerCase());
+            return found === undefined;
+        });
+        return Object.assign(Object.assign({}, raw), { headers: [
+                ...raw.headers,
+                ...headersToAppend
+            ] });
+    }
+    exports.finalizeRequest = finalizeRequest;
     ;
 });
 define("node_modules/@joelek/ts-autoguard/dist/lib-client/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/index", "node_modules/@joelek/ts-autoguard/dist/lib-client/api"], function (require, exports, lib_shared_1, api) {
@@ -1201,9 +1213,9 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.makeClient = void 0;
-    const makeClient = (options) => ({
+    const makeClient = (clientOptions) => ({
         "getFood": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f;
+            var _a, _b, _c, _d, _e, _f, _g, _h;
             let guard = shared.Autoguard.Requests["getFood"];
             guard.as(request, "request");
             let method = "GET";
@@ -1216,12 +1228,15 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
             let headers = new Array();
             headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_c = request.headers) !== null && _c !== void 0 ? _c : {}, headers.map((header) => header[0])));
             let payload = (_d = request.payload) !== null && _d !== void 0 ? _d : [];
-            let requestHandler = (_e = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _e !== void 0 ? _e : autoguard.api.xhr;
-            let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
+            let requestHandler = (_e = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.requestHandler) !== null && _e !== void 0 ? _e : autoguard.api.xhr;
+            let defaultHeaders = (_g = (_f = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.defaultHeaders) === null || _f === void 0 ? void 0 : _f.slice()) !== null && _g !== void 0 ? _g : [];
+            defaultHeaders.push(["Content-Type", "application/octet-stream"]);
+            defaultHeaders.push(["Accept", "application/json; charset=utf-8"]);
+            let raw = yield requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.urlPrefix);
             {
                 let status = raw.status;
                 let headers = {};
-                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_f = raw.headers) !== null && _f !== void 0 ? _f : {}, Object.keys(headers)));
+                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_h = raw.headers) !== null && _h !== void 0 ? _h : {}, Object.keys(headers)));
                 let payload = yield autoguard.api.deserializePayload(raw.payload);
                 let guard = shared.Autoguard.Responses["getFood"];
                 let response = guard.as({ status, headers, payload }, "response");
@@ -1229,23 +1244,26 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
             }
         }),
         "getStaticContent": (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _g, _h, _j, _k, _l, _m, _o;
+            var _j, _k, _l, _m, _o, _p, _q, _r, _s;
             let guard = shared.Autoguard.Requests["getStaticContent"];
             guard.as(request, "request");
             let method = "GET";
             let components = new Array();
-            components.push(...autoguard.api.encodeComponents((_h = (_g = request.options) === null || _g === void 0 ? void 0 : _g["filename"]) !== null && _h !== void 0 ? _h : [], true));
+            components.push(...autoguard.api.encodeComponents((_k = (_j = request.options) === null || _j === void 0 ? void 0 : _j["filename"]) !== null && _k !== void 0 ? _k : [], true));
             let parameters = new Array();
-            parameters.push(...autoguard.api.encodeUndeclaredParameterPairs((_j = request.options) !== null && _j !== void 0 ? _j : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
+            parameters.push(...autoguard.api.encodeUndeclaredParameterPairs((_l = request.options) !== null && _l !== void 0 ? _l : {}, [...["filename"], ...parameters.map((parameter) => parameter[0])]));
             let headers = new Array();
-            headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_k = request.headers) !== null && _k !== void 0 ? _k : {}, headers.map((header) => header[0])));
-            let payload = (_l = request.payload) !== null && _l !== void 0 ? _l : [];
-            let requestHandler = (_m = options === null || options === void 0 ? void 0 : options.requestHandler) !== null && _m !== void 0 ? _m : autoguard.api.xhr;
-            let raw = yield requestHandler({ method, components, parameters, headers, payload }, options === null || options === void 0 ? void 0 : options.urlPrefix);
+            headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_m = request.headers) !== null && _m !== void 0 ? _m : {}, headers.map((header) => header[0])));
+            let payload = (_o = request.payload) !== null && _o !== void 0 ? _o : [];
+            let requestHandler = (_p = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.requestHandler) !== null && _p !== void 0 ? _p : autoguard.api.xhr;
+            let defaultHeaders = (_r = (_q = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.defaultHeaders) === null || _q === void 0 ? void 0 : _q.slice()) !== null && _r !== void 0 ? _r : [];
+            defaultHeaders.push(["Content-Type", "application/octet-stream"]);
+            defaultHeaders.push(["Accept", "application/octet-stream"]);
+            let raw = yield requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.urlPrefix);
             {
                 let status = raw.status;
                 let headers = {};
-                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_o = raw.headers) !== null && _o !== void 0 ? _o : {}, Object.keys(headers)));
+                headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_s = raw.headers) !== null && _s !== void 0 ? _s : {}, Object.keys(headers)));
                 let payload = raw.payload;
                 let guard = shared.Autoguard.Responses["getStaticContent"];
                 let response = guard.as({ status, headers, payload }, "response");
