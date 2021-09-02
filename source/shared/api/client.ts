@@ -25,7 +25,7 @@ export const makeClient = (clientOptions?: autoguard.api.MakeClientOptions): aut
 		{
 			let status = raw.status;
 			let headers: Record<string, autoguard.api.JSON> = {};
-			headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers ?? {}, Object.keys(headers)) };
+			headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)) };
 			let payload = await autoguard.api.deserializePayload(raw.payload);
 			let guard = shared.Autoguard.Responses["getFood"];
 			let response = guard.as({ status, headers, payload }, "response");
@@ -51,7 +51,7 @@ export const makeClient = (clientOptions?: autoguard.api.MakeClientOptions): aut
 		{
 			let status = raw.status;
 			let headers: Record<string, autoguard.api.JSON> = {};
-			headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers ?? {}, Object.keys(headers)) };
+			headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)) };
 			let payload = raw.payload;
 			let guard = shared.Autoguard.Responses["getStaticContent"];
 			let response = guard.as({ status, headers, payload }, "response");
