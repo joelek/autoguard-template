@@ -264,12 +264,17 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
         }
     };
     exports.Object = {
-        of(guards) {
+        of(required, optional) {
             return {
                 as(subject, path = "") {
                     if ((subject != null) && (subject.constructor === globalThis.Object)) {
-                        for (let key in guards) {
-                            guards[key].as(subject[key], path + (/^([a-z][a-z0-9_]*)$/isu.test(key) ? "." + key : "[\"" + key + "\"]"));
+                        for (let key in required) {
+                            required[key].as(subject[key], path + (/^([a-z][a-z0-9_]*)$/isu.test(key) ? "." + key : "[\"" + key + "\"]"));
+                        }
+                        for (let key in optional) {
+                            if (key in subject && subject[key] !== undefined) {
+                                optional[key].as(subject[key], path + (/^([a-z][a-z0-9_]*)$/isu.test(key) ? "." + key : "[\"" + key + "\"]"));
+                            }
                         }
                         return subject;
                     }
@@ -286,8 +291,11 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
                 },
                 ts(eol = "\n") {
                     let lines = new globalThis.Array();
-                    for (let [key, value] of globalThis.Object.entries(guards)) {
+                    for (let [key, value] of globalThis.Object.entries(required)) {
                         lines.push(`\t"${key}": ${value.ts(eol + "\t")}`);
+                    }
+                    for (let [key, value] of globalThis.Object.entries(optional !== null && optional !== void 0 ? optional : {})) {
+                        lines.push(`\t"${key}"?: ${value.ts(eol + "\t")}`);
                     }
                     return "object<" + eol + lines.join("," + eol) + eol + ">";
                 }
@@ -1172,17 +1180,21 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 let payload = yield shared.api.collectPayload(raw.payload);
                 let headers = {
-                    "Content-Length": [`${payload.length}`]
+                    "Content-Length": `${payload.length}`
                 };
                 for (let header of raw.headers) {
                     let key = header[0];
                     let value = header[1];
                     let values = headers[key];
                     if (values === undefined) {
-                        values = new Array();
-                        headers[key] = values;
+                        headers[key] = value;
                     }
-                    values.push(value);
+                    else if (Array.isArray(values)) {
+                        values.push(value);
+                    }
+                    else {
+                        headers[key] = [values, value];
+                    }
                 }
                 let url = urlPrefix !== null && urlPrefix !== void 0 ? urlPrefix : "";
                 url += shared.api.combineComponents(raw.components);
@@ -1455,15 +1467,32 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-server/api", ["require", "exp
     // TODO: Move to Nexus in v6.
     function getContentTypeFromExtension(extension) {
         let extensions = {
+            ".aac": "audio/aac",
+            ".bmp": "image/bmp",
             ".css": "text/css",
+            ".csv": "text/csv",
+            ".gif": "image/gif",
             ".htm": "text/html",
             ".html": "text/html",
             ".jpg": "image/jpeg",
             ".jpeg": "image/jpeg",
             ".js": "text/javascript",
             ".json": "application/json",
+            ".mid": "audio/midi",
+            ".mp3": "audio/mpeg",
+            ".mp4": "video/mp4",
+            ".otf": "font/otf",
+            ".pdf": "application/pdf",
             ".png": "image/png",
-            ".svg": "image/svg+xml"
+            ".svg": "image/svg+xml",
+            ".tif": "image/tiff",
+            ".tiff": "image/tiff",
+            ".ttf": "font/ttf",
+            ".txt": "text/plain",
+            ".wav": "audio/wav",
+            ".woff": "font/woff",
+            ".woff2": "font/woff2",
+            ".xml": "text/xml"
         };
         return extensions[extension];
     }
@@ -1576,7 +1605,7 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
     exports.Food = autoguard.guards.Object.of({
         "food_id": autoguard.guards.Number,
         "name": autoguard.guards.String
-    });
+    }, {});
     var Autoguard;
     (function (Autoguard) {
         Autoguard.Guards = {
@@ -1586,30 +1615,32 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
             "getFood": autoguard.guards.Object.of({
                 "options": autoguard.guards.Intersection.of(autoguard.guards.Object.of({
                     "food_id": autoguard.guards.Number
-                }), autoguard.api.Options),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
-                "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
+                }, {}), autoguard.api.Options)
+            }, {
+                "headers": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {}), autoguard.api.Headers),
+                "payload": autoguard.api.Binary
             }),
-            "getStaticContent": autoguard.guards.Object.of({
-                "options": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({
-                    "filename": autoguard.guards.Union.of(autoguard.guards.Array.of(autoguard.guards.String), autoguard.guards.Undefined)
-                }), autoguard.api.Options), autoguard.guards.Undefined),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
-                "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
+            "getStaticContent": autoguard.guards.Object.of({}, {
+                "options": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {
+                    "filename": autoguard.guards.Array.of(autoguard.guards.String)
+                }), autoguard.api.Options),
+                "headers": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {}), autoguard.api.Headers),
+                "payload": autoguard.api.Binary
             })
         };
         Autoguard.Responses = {
             "getFood": autoguard.guards.Object.of({
-                "status": autoguard.guards.Union.of(autoguard.guards.Number, autoguard.guards.Undefined),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
                 "payload": autoguard.guards.Object.of({
                     "food": autoguard.guards.Reference.of(() => exports.Food)
-                })
+                }, {})
+            }, {
+                "status": autoguard.guards.Number,
+                "headers": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {}), autoguard.api.Headers)
             }),
-            "getStaticContent": autoguard.guards.Object.of({
-                "status": autoguard.guards.Union.of(autoguard.guards.Number, autoguard.guards.Undefined),
-                "headers": autoguard.guards.Union.of(autoguard.guards.Intersection.of(autoguard.guards.Object.of({}), autoguard.api.Headers), autoguard.guards.Undefined),
-                "payload": autoguard.guards.Union.of(autoguard.api.Binary, autoguard.guards.Undefined)
+            "getStaticContent": autoguard.guards.Object.of({}, {
+                "status": autoguard.guards.Number,
+                "headers": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {}), autoguard.api.Headers),
+                "payload": autoguard.api.Binary
             })
         };
     })(Autoguard = exports.Autoguard || (exports.Autoguard = {}));
@@ -1656,12 +1687,11 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                 acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, matchers),
                 acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
                 validateRequest: () => __awaiter(void 0, void 0, void 0, function* () {
-                    var _a, _b;
                     let options = {};
                     options["food_id"] = matchers[1].getValue();
-                    options = Object.assign(Object.assign({}, options), autoguard.api.decodeUndeclaredParameters((_a = raw.parameters) !== null && _a !== void 0 ? _a : {}, Object.keys(options)));
+                    options = Object.assign(Object.assign({}, options), autoguard.api.decodeUndeclaredParameters(raw.parameters, Object.keys(options)));
                     let headers = {};
-                    headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_b = raw.headers) !== null && _b !== void 0 ? _b : {}, Object.keys(headers)));
+                    headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)));
                     let payload = raw.payload;
                     let guard = shared.Autoguard.Requests["getFood"];
                     let request = guard.as({ options, headers, payload }, "request");
@@ -1670,14 +1700,14 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                             let response = yield routes["getFood"](new autoguard.api.ClientRequest(request, true, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
-                                    var _c, _d, _e, _f;
+                                    var _a, _b, _c, _d;
                                     let guard = shared.Autoguard.Responses["getFood"];
                                     guard.as(response, "response");
-                                    let status = (_c = response.status) !== null && _c !== void 0 ? _c : 200;
+                                    let status = (_a = response.status) !== null && _a !== void 0 ? _a : 200;
                                     let headers = new Array();
-                                    headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_d = response.headers) !== null && _d !== void 0 ? _d : {}, headers.map((header) => header[0])));
+                                    headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_b = response.headers) !== null && _b !== void 0 ? _b : {}, headers.map((header) => header[0])));
                                     let payload = autoguard.api.serializePayload(response.payload);
-                                    let defaultHeaders = (_f = (_e = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.defaultHeaders) === null || _e === void 0 ? void 0 : _e.slice()) !== null && _f !== void 0 ? _f : [];
+                                    let defaultHeaders = (_d = (_c = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.defaultHeaders) === null || _c === void 0 ? void 0 : _c.slice()) !== null && _d !== void 0 ? _d : [];
                                     defaultHeaders.push(["Content-Type", "application/json; charset=utf-8"]);
                                     return autoguard.api.finalizeResponse({ status, headers, payload }, defaultHeaders);
                                 })
@@ -1695,12 +1725,11 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                 acceptsComponents: () => autoguard.api.acceptsComponents(raw.components, matchers),
                 acceptsMethod: () => autoguard.api.acceptsMethod(raw.method, method),
                 validateRequest: () => __awaiter(void 0, void 0, void 0, function* () {
-                    var _a, _b;
                     let options = {};
                     options["filename"] = matchers[0].getValue();
-                    options = Object.assign(Object.assign({}, options), autoguard.api.decodeUndeclaredParameters((_a = raw.parameters) !== null && _a !== void 0 ? _a : {}, Object.keys(options)));
+                    options = Object.assign(Object.assign({}, options), autoguard.api.decodeUndeclaredParameters(raw.parameters, Object.keys(options)));
                     let headers = {};
-                    headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders((_b = raw.headers) !== null && _b !== void 0 ? _b : {}, Object.keys(headers)));
+                    headers = Object.assign(Object.assign({}, headers), autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)));
                     let payload = raw.payload;
                     let guard = shared.Autoguard.Requests["getStaticContent"];
                     let request = guard.as({ options, headers, payload }, "request");
@@ -1709,14 +1738,14 @@ define("build/shared/api/server", ["require", "exports", "node_modules/@joelek/t
                             let response = yield routes["getStaticContent"](new autoguard.api.ClientRequest(request, true, auxillary));
                             return {
                                 validateResponse: () => __awaiter(void 0, void 0, void 0, function* () {
-                                    var _c, _d, _e, _f, _g;
+                                    var _a, _b, _c, _d, _e;
                                     let guard = shared.Autoguard.Responses["getStaticContent"];
                                     guard.as(response, "response");
-                                    let status = (_c = response.status) !== null && _c !== void 0 ? _c : 200;
+                                    let status = (_a = response.status) !== null && _a !== void 0 ? _a : 200;
                                     let headers = new Array();
-                                    headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_d = response.headers) !== null && _d !== void 0 ? _d : {}, headers.map((header) => header[0])));
-                                    let payload = (_e = response.payload) !== null && _e !== void 0 ? _e : [];
-                                    let defaultHeaders = (_g = (_f = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.defaultHeaders) === null || _f === void 0 ? void 0 : _f.slice()) !== null && _g !== void 0 ? _g : [];
+                                    headers.push(...autoguard.api.encodeUndeclaredHeaderPairs((_b = response.headers) !== null && _b !== void 0 ? _b : {}, headers.map((header) => header[0])));
+                                    let payload = (_c = response.payload) !== null && _c !== void 0 ? _c : [];
+                                    let defaultHeaders = (_e = (_d = serverOptions === null || serverOptions === void 0 ? void 0 : serverOptions.defaultHeaders) === null || _d === void 0 ? void 0 : _d.slice()) !== null && _e !== void 0 ? _e : [];
                                     defaultHeaders.push(["Content-Type", "application/octet-stream"]);
                                     return autoguard.api.finalizeResponse({ status, headers, payload }, defaultHeaders);
                                 })
