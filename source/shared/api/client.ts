@@ -3,9 +3,11 @@
 import * as autoguard from "@joelek/ts-autoguard/dist/lib-client";
 import * as shared from "./index";
 
-export const makeClient = (clientOptions?: autoguard.api.MakeClientOptions): autoguard.api.Client<shared.Autoguard.Requests, shared.Autoguard.Responses> => ({
+export type Client = autoguard.api.Client<shared.Autoguard.Requests, shared.Autoguard.Responses>;
+
+export const makeClient = (clientOptions?: autoguard.api.ClientOptions): Client => ({
 	"getFood": async (request) => {
-		let guard = shared.Autoguard.Requests["getFood"];
+		let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Requests["getFood"], clientOptions?.debugMode);
 		guard.as(request, "request");
 		let method = "GET";
 		let components = new Array<string>();
@@ -21,19 +23,19 @@ export const makeClient = (clientOptions?: autoguard.api.MakeClientOptions): aut
 		let defaultHeaders = clientOptions?.defaultHeaders?.slice() ?? [];
 		defaultHeaders.push(["Content-Type", "application/octet-stream"]);
 		defaultHeaders.push(["Accept", "application/json; charset=utf-8"]);
-		let raw = await requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions?.urlPrefix);
+		let raw = await requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions);
 		{
 			let status = raw.status;
 			let headers: Record<string, autoguard.api.JSON> = {};
 			headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)) };
 			let payload = await autoguard.api.deserializePayload(raw.payload);
-			let guard = shared.Autoguard.Responses["getFood"];
+			let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Responses["getFood"], clientOptions?.debugMode);
 			let response = guard.as({ status, headers, payload }, "response");
 			return new autoguard.api.ServerResponse(response, false);
 		}
 	},
 	"getStaticContent": async (request) => {
-		let guard = shared.Autoguard.Requests["getStaticContent"];
+		let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Requests["getStaticContent"], clientOptions?.debugMode);
 		guard.as(request, "request");
 		let method = "GET";
 		let components = new Array<string>();
@@ -47,13 +49,13 @@ export const makeClient = (clientOptions?: autoguard.api.MakeClientOptions): aut
 		let defaultHeaders = clientOptions?.defaultHeaders?.slice() ?? [];
 		defaultHeaders.push(["Content-Type", "application/octet-stream"]);
 		defaultHeaders.push(["Accept", "application/octet-stream"]);
-		let raw = await requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions?.urlPrefix);
+		let raw = await requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions);
 		{
 			let status = raw.status;
 			let headers: Record<string, autoguard.api.JSON> = {};
 			headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)) };
 			let payload = raw.payload;
-			let guard = shared.Autoguard.Responses["getStaticContent"];
+			let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Responses["getStaticContent"], clientOptions?.debugMode);
 			let response = guard.as({ status, headers, payload }, "response");
 			return new autoguard.api.ServerResponse(response, true);
 		}

@@ -3,7 +3,9 @@
 import * as autoguard from "@joelek/ts-autoguard/dist/lib-server";
 import * as shared from "./index";
 
-export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Requests, shared.Autoguard.Responses>, serverOptions?: autoguard.api.MakeServerOptions): autoguard.api.RequestListener => {
+export type Server = autoguard.api.RequestListener;
+
+export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Requests, shared.Autoguard.Responses>, serverOptions?: autoguard.api.ServerOptions): Server => {
 	let endpoints = new Array<autoguard.api.Endpoint>();
 	endpoints.push((raw, auxillary) => {
 		let method = "GET";
@@ -21,14 +23,14 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 				let headers: Record<string, autoguard.api.JSON> = {};
 				headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)) };
 				let payload = raw.payload;
-				let guard = shared.Autoguard.Requests["getFood"];
+				let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Requests["getFood"], serverOptions?.debugMode);
 				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
 						let response = await routes["getFood"](new autoguard.api.ClientRequest(request, true, auxillary));
 						return {
 							validateResponse: async () => {
-								let guard = shared.Autoguard.Responses["getFood"];
+								let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Responses["getFood"], serverOptions?.debugMode);
 								guard.as(response, "response");
 								let status = response.status ?? 200;
 								let headers = new Array<[string, string]>();
@@ -58,14 +60,14 @@ export const makeServer = (routes: autoguard.api.Server<shared.Autoguard.Request
 				let headers: Record<string, autoguard.api.JSON> = {};
 				headers = { ...headers, ...autoguard.api.decodeUndeclaredHeaders(raw.headers, Object.keys(headers)) };
 				let payload = raw.payload;
-				let guard = shared.Autoguard.Requests["getStaticContent"];
+				let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Requests["getStaticContent"], serverOptions?.debugMode);
 				let request = guard.as({ options, headers, payload }, "request");
 				return {
 					handleRequest: async () => {
 						let response = await routes["getStaticContent"](new autoguard.api.ClientRequest(request, true, auxillary));
 						return {
 							validateResponse: async () => {
-								let guard = shared.Autoguard.Responses["getStaticContent"];
+								let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Responses["getStaticContent"], serverOptions?.debugMode);
 								guard.as(response, "response");
 								let status = response.status ?? 200;
 								let headers = new Array<[string, string]>();
