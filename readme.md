@@ -10,6 +10,12 @@ The sponsor button can be used to view the different sponsoring options. Contrib
 
 Thank you for your support!
 
+### Ethereum
+
+Ethereum contributions can be made to address `0xf1B63d95BEfEdAf70B3623B1A4Ba0D9CE7F2fE6D`.
+
+![](./eth.png)
+
 ## Installation
 
 Clone this project and run `npm install` to install the project dependencies.
