@@ -21,7 +21,7 @@
 		"package:client": "npx tsb --entry=./build/client/index.js --bundle=./dist/client/bundle.js",
 		"package:server": "npx tsb --entry=./build/server/index.js --bundle=./dist/server/bundle.js",
 		"package": "npm run package:client && npm run package:server",
-		"preversion": "npm run build && git add ./",
+		"version": "npm run build && git add ./",
 		"postversion": "git push && git push --tags"
 	},
 	"version": "0.0.0"
