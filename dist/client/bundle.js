@@ -12,7 +12,7 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/serialization", ["require", "exports"], function (require, exports) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/serialization", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MessageSerializer = exports.MessageGuardError = exports.MessageGuardBase = void 0;
@@ -88,11 +88,11 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/serialization", ["requ
     exports.MessageSerializer = MessageSerializer;
     ;
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/serialization"], function (require, exports, serialization) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/guards", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/serialization"], function (require, exports, serialization) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Union = exports.UnionGuard = exports.Undefined = exports.UndefinedGuard = exports.Tuple = exports.TupleGuard = exports.StringLiteral = exports.StringLiteralGuard = exports.String = exports.StringGuard = exports.Reference = exports.ReferenceGuard = exports.Record = exports.RecordGuard = exports.Object = exports.ObjectGuard = exports.NumberLiteral = exports.NumberLiteralGuard = exports.Number = exports.NumberGuard = exports.Null = exports.NullGuard = exports.Intersection = exports.IntersectionGuard = exports.Integer = exports.IntegerGuard = exports.Group = exports.GroupGuard = exports.BooleanLiteral = exports.BooleanLiteralGuard = exports.Boolean = exports.BooleanGuard = exports.Binary = exports.BinaryGuard = exports.BigInt = exports.BigIntGuard = exports.Array = exports.ArrayGuard = exports.Any = exports.AnyGuard = void 0;
+    exports.Union = exports.UnionGuard = exports.Undefined = exports.UndefinedGuard = exports.Tuple = exports.TupleGuard = exports.StringLiteral = exports.StringLiteralGuard = exports.String = exports.StringGuard = exports.Reference = exports.ReferenceGuard = exports.Key = exports.KeyGuard = exports.Record = exports.RecordGuard = exports.Object = exports.ObjectGuard = exports.NumberLiteral = exports.NumberLiteralGuard = exports.Number = exports.NumberGuard = exports.Null = exports.NullGuard = exports.Intersection = exports.IntersectionGuard = exports.IntegerLiteral = exports.IntegerLiteralGuard = exports.Integer = exports.IntegerGuard = exports.Group = exports.GroupGuard = exports.BooleanLiteral = exports.BooleanLiteralGuard = exports.Boolean = exports.BooleanGuard = exports.Binary = exports.BinaryGuard = exports.BigInt = exports.BigIntGuard = exports.Array = exports.ArrayGuard = exports.Any = exports.AnyGuard = void 0;
     class AnyGuard extends serialization.MessageGuardBase {
         constructor() {
             super();
@@ -227,22 +227,59 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
         }
     };
     class IntegerGuard extends serialization.MessageGuardBase {
-        constructor() {
+        constructor(min, max) {
             super();
+            this.min = min;
+            this.max = max;
         }
         as(subject, path = "") {
             if ((subject != null) && (subject.constructor === globalThis.Number) && globalThis.Number.isInteger(subject)) {
-                return subject;
+                let number = subject;
+                if (this.min != null && number < this.min) {
+                    throw new serialization.MessageGuardError(this, subject, path);
+                }
+                if (this.max != null && number > this.max) {
+                    throw new serialization.MessageGuardError(this, subject, path);
+                }
+                return number;
             }
             throw new serialization.MessageGuardError(this, subject, path);
         }
         ts(eol = "\n") {
-            return "number";
+            var _a, _b;
+            if (this.min == null && this.max == null) {
+                return "integer";
+            }
+            else {
+                return `integer(${(_a = this.min) !== null && _a !== void 0 ? _a : "*"}, ${(_b = this.max) !== null && _b !== void 0 ? _b : "*"})`;
+            }
         }
     }
     exports.IntegerGuard = IntegerGuard;
     ;
     exports.Integer = new IntegerGuard();
+    class IntegerLiteralGuard extends serialization.MessageGuardBase {
+        constructor(value) {
+            super();
+            this.value = value;
+        }
+        as(subject, path = "") {
+            if (subject === this.value) {
+                return subject;
+            }
+            throw new serialization.MessageGuardError(this, subject, path);
+        }
+        ts(eol = "\n") {
+            return `${this.value}`;
+        }
+    }
+    exports.IntegerLiteralGuard = IntegerLiteralGuard;
+    ;
+    exports.IntegerLiteral = {
+        of(value) {
+            return new IntegerLiteralGuard(value);
+        }
+    };
     class IntersectionGuard extends serialization.MessageGuardBase {
         constructor(...guards) {
             super();
@@ -287,17 +324,32 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
     ;
     exports.Null = new NullGuard();
     class NumberGuard extends serialization.MessageGuardBase {
-        constructor() {
+        constructor(min, max) {
             super();
+            this.min = min;
+            this.max = max;
         }
         as(subject, path = "") {
             if ((subject != null) && (subject.constructor === globalThis.Number)) {
-                return subject;
+                let number = subject;
+                if (this.min != null && number < this.min) {
+                    throw new serialization.MessageGuardError(this, subject, path);
+                }
+                if (this.max != null && number > this.max) {
+                    throw new serialization.MessageGuardError(this, subject, path);
+                }
+                return number;
             }
             throw new serialization.MessageGuardError(this, subject, path);
         }
         ts(eol = "\n") {
-            return "number";
+            var _a, _b;
+            if (this.min == null && this.max == null) {
+                return "number";
+            }
+            else {
+                return `number(${(_a = this.min) !== null && _a !== void 0 ? _a : "*"}, ${(_b = this.max) !== null && _b !== void 0 ? _b : "*"})`;
+            }
         }
     }
     exports.NumberGuard = NumberGuard;
@@ -389,6 +441,35 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
             return new RecordGuard(guard);
         }
     };
+    class KeyGuard extends serialization.MessageGuardBase {
+        constructor(record) {
+            super();
+            this.record = record;
+        }
+        as(subject, path = "") {
+            if ((subject != null) && (subject.constructor === globalThis.String || subject.constructor === globalThis.Number)) {
+                let string = subject;
+                if (string in this.record) {
+                    return string;
+                }
+            }
+            throw new serialization.MessageGuardError(this, subject, path);
+        }
+        ts(eol = "\n") {
+            let lines = new globalThis.Array();
+            for (let key of globalThis.Object.keys(this.record)) {
+                lines.push(`\t"${key}"`);
+            }
+            return lines.length === 0 ? "key<>" : "key<" + eol + lines.join("," + eol) + eol + ">";
+        }
+    }
+    exports.KeyGuard = KeyGuard;
+    ;
+    exports.Key = {
+        of(record) {
+            return new KeyGuard(record);
+        }
+    };
     class ReferenceGuard extends serialization.MessageGuardBase {
         constructor(guard) {
             super();
@@ -409,17 +490,28 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
         }
     };
     class StringGuard extends serialization.MessageGuardBase {
-        constructor() {
+        constructor(pattern) {
             super();
+            this.pattern = pattern;
         }
         as(subject, path = "") {
             if ((subject != null) && (subject.constructor === globalThis.String)) {
-                return subject;
+                let string = subject;
+                if (this.pattern != null && !this.pattern.test(string)) {
+                    throw new serialization.MessageGuardError(this, subject, path);
+                }
+                return string;
             }
             throw new serialization.MessageGuardError(this, subject, path);
         }
         ts(eol = "\n") {
-            return "string";
+            if (this.pattern == null) {
+                return "string";
+            }
+            else {
+                let pattern = this.pattern != null ? `"${this.pattern.source}"` : "*";
+                return `string(${pattern})`;
+            }
         }
     }
     exports.StringGuard = StringGuard;
@@ -523,7 +615,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", ["require", "
         }
     };
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/api", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/guards"], function (require, exports, guards) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/api", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/guards"], function (require, exports, guards) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -948,10 +1040,11 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/api", ["require", "exp
     }
     exports.deserializeValue = deserializeValue;
     ;
-    function collectPayload(binary) {
+    function collectPayload(binary, maxByteLength) {
         var _a, binary_1, binary_1_1;
         var _b, e_1, _c, _d;
         return __awaiter(this, void 0, void 0, function* () {
+            maxByteLength = maxByteLength !== null && maxByteLength !== void 0 ? maxByteLength : Infinity;
             let chunks = new Array();
             let length = 0;
             try {
@@ -962,6 +1055,9 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/api", ["require", "exp
                         let chunk = _d;
                         chunks.push(chunk);
                         length += chunk.length;
+                        if (length > maxByteLength) {
+                            throw `Expected payload to contain at most ${maxByteLength} bytes!`;
+                        }
                     }
                     finally {
                         _a = true;
@@ -1065,7 +1161,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/api", ["require", "exp
     exports.wrapMessageGuard = wrapMessageGuard;
     ;
 });
-define("node_modules/@joelek/ts-stdlib/dist/lib/asserts/integer", ["require", "exports"], function (require, exports) {
+define("node_modules/@joelek/stdlib/dist/lib/asserts/integer", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.IntegerAssert = void 0;
@@ -1114,7 +1210,147 @@ define("node_modules/@joelek/ts-stdlib/dist/lib/asserts/integer", ["require", "e
     exports.IntegerAssert = IntegerAssert;
     ;
 });
-define("node_modules/@joelek/ts-stdlib/dist/lib/data/parser", ["require", "exports", "node_modules/@joelek/ts-stdlib/dist/lib/asserts/integer"], function (require, exports, integer_1) {
+define("node_modules/@joelek/stdlib/dist/lib/data/chunk", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Chunk = void 0;
+    class Chunk {
+        constructor() { }
+        static fromString(string, encoding) {
+            if (encoding === "binary") {
+                let bytes = new Array();
+                for (let i = 0; i < string.length; i += 1) {
+                    let code_unit = string.charCodeAt(i);
+                    bytes.push(code_unit);
+                }
+                return Uint8Array.from(bytes);
+            }
+            if (encoding === "base64") {
+                // @ts-ignore
+                return Chunk.fromString(atob(string), "binary");
+            }
+            if (encoding === "base64url") {
+                return Chunk.fromString(string.replaceAll("-", "+").replaceAll("_", "/"), "base64");
+            }
+            if (encoding === "hex") {
+                if (string.length % 2 === 1) {
+                    string = `0${string}`;
+                }
+                let bytes = new Array();
+                for (let i = 0; i < string.length; i += 2) {
+                    let part = string.slice(i, i + 2);
+                    let byte = Number.parseInt(part, 16);
+                    bytes.push(byte);
+                }
+                return Uint8Array.from(bytes);
+            }
+            if (encoding === "utf16be") {
+                let bytes = new Array();
+                for (let i = 0; i < string.length; i++) {
+                    let code_unit = string.charCodeAt(i);
+                    let hi = (code_unit >> 8) & 0xFF;
+                    let lo = (code_unit >> 0) & 0xFF;
+                    bytes.push(hi, lo);
+                }
+                return Uint8Array.from(bytes);
+            }
+            if (encoding === "utf16le") {
+                let bytes = new Array();
+                for (let i = 0; i < string.length; i++) {
+                    let code_unit = string.charCodeAt(i);
+                    let lo = (code_unit >> 8) & 0xFF;
+                    let hi = (code_unit >> 0) & 0xFF;
+                    bytes.push(hi, lo);
+                }
+                return Uint8Array.from(bytes);
+            }
+            // @ts-ignore
+            return new TextEncoder().encode(string);
+        }
+        static toString(chunk, encoding) {
+            if (encoding === "binary") {
+                let parts = new Array();
+                for (let byte of chunk) {
+                    let part = String.fromCharCode(byte);
+                    parts.push(part);
+                }
+                return parts.join("");
+            }
+            if (encoding === "base64") {
+                // @ts-ignore
+                return btoa(Chunk.toString(chunk, "binary"));
+            }
+            if (encoding === "base64url") {
+                return Chunk.toString(chunk, "base64").replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+            }
+            if (encoding === "hex") {
+                let parts = new Array();
+                for (let byte of chunk) {
+                    let part = byte.toString(16).toUpperCase().padStart(2, "0");
+                    parts.push(part);
+                }
+                return parts.join("");
+            }
+            if (encoding === "utf16be") {
+                let parts = new Array();
+                for (let i = 0; i < chunk.length; i += 2) {
+                    let hi = chunk[i + 0] || 0;
+                    let lo = chunk[i + 1] || 0;
+                    let code_unit = (hi << 8) | lo;
+                    parts.push(String.fromCharCode(code_unit));
+                }
+                return parts.join("");
+            }
+            if (encoding === "utf16le") {
+                let parts = new Array();
+                for (let i = 0; i < chunk.length; i += 2) {
+                    let lo = chunk[i + 0] || 0;
+                    let hi = chunk[i + 1] || 0;
+                    let code_unit = (hi << 8) | lo;
+                    parts.push(String.fromCharCode(code_unit));
+                }
+                return parts.join("");
+            }
+            // @ts-ignore
+            return new TextDecoder().decode(chunk);
+        }
+        static equals(one, two) {
+            return this.comparePrefixes(one, two) === 0;
+        }
+        static comparePrefixes(one, two) {
+            for (let i = 0; i < Math.min(one.length, two.length); i++) {
+                let a = one[i];
+                let b = two[i];
+                if (a < b) {
+                    return -1;
+                }
+                if (a > b) {
+                    return 1;
+                }
+            }
+            if (one.length < two.length) {
+                return -1;
+            }
+            if (one.length > two.length) {
+                return 1;
+            }
+            return 0;
+        }
+        static concat(buffers) {
+            let length = buffers.reduce((sum, buffer) => sum + buffer.length, 0);
+            let result = new Uint8Array(length);
+            let offset = 0;
+            for (let buffer of buffers) {
+                result.set(buffer, offset);
+                offset += buffer.length;
+            }
+            return result;
+        }
+    }
+    exports.Chunk = Chunk;
+    ;
+});
+define("node_modules/@joelek/stdlib/dist/lib/data/parser", ["require", "exports", "node_modules/@joelek/stdlib/dist/lib/asserts/integer", "node_modules/@joelek/stdlib/dist/lib/data/chunk"], function (require, exports, integer_1, chunk_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1136,6 +1372,12 @@ define("node_modules/@joelek/ts-stdlib/dist/lib/data/parser", ["require", "expor
         eof() {
             return this.offset >= this.buffer.length;
         }
+        seek(offset) {
+            if (offset > this.buffer.length) {
+                throw new Error(`Expected a valid offset!`);
+            }
+            this.offset = offset;
+        }
         signed(length, endian) {
             let value = this.unsigned(length, endian);
             let bias = Math.pow(2, (length * 8 - 1));
@@ -1143,6 +1385,26 @@ define("node_modules/@joelek/ts-stdlib/dist/lib/data/parser", ["require", "expor
                 value -= bias + bias;
             }
             return value;
+        }
+        string(encoding, length) {
+            if (length != null) {
+                let chunk = this.chunk(length);
+                return chunk_1.Chunk.toString(chunk, encoding);
+            }
+            let bytes = [];
+            while (!this.eof()) {
+                if (this.offset > this.buffer.length) {
+                    throw new Error(`Expected to read at least 1 byte!`);
+                }
+                let byte = this.buffer[this.offset];
+                this.offset += 1;
+                if (byte === 0) {
+                    break;
+                }
+                bytes.push(byte);
+            }
+            let chunk = Uint8Array.from(bytes);
+            return chunk_1.Chunk.toString(chunk, encoding);
         }
         try(supplier) {
             let offset = this.offset;
@@ -1194,107 +1456,7 @@ define("node_modules/@joelek/ts-stdlib/dist/lib/data/parser", ["require", "expor
     exports.Parser = Parser;
     ;
 });
-define("node_modules/@joelek/ts-stdlib/dist/lib/data/chunk", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Chunk = void 0;
-    class Chunk {
-        constructor() { }
-        static fromString(string, encoding) {
-            if (encoding === "binary") {
-                let bytes = new Array();
-                for (let i = 0; i < string.length; i += 1) {
-                    let byte = string.charCodeAt(i);
-                    bytes.push(byte);
-                }
-                return Uint8Array.from(bytes);
-            }
-            if (encoding === "base64") {
-                // @ts-ignore
-                return Chunk.fromString(atob(string), "binary");
-            }
-            if (encoding === "base64url") {
-                return Chunk.fromString(string.replaceAll("-", "+").replaceAll("_", "/"), "base64");
-            }
-            if (encoding === "hex") {
-                if (string.length % 2 === 1) {
-                    string = `0${string}`;
-                }
-                let bytes = new Array();
-                for (let i = 0; i < string.length; i += 2) {
-                    let part = string.slice(i, i + 2);
-                    let byte = Number.parseInt(part, 16);
-                    bytes.push(byte);
-                }
-                return Uint8Array.from(bytes);
-            }
-            // @ts-ignore
-            return new TextEncoder().encode(string);
-        }
-        static toString(chunk, encoding) {
-            if (encoding === "binary") {
-                let parts = new Array();
-                for (let byte of chunk) {
-                    let part = String.fromCharCode(byte);
-                    parts.push(part);
-                }
-                return parts.join("");
-            }
-            if (encoding === "base64") {
-                // @ts-ignore
-                return btoa(Chunk.toString(chunk, "binary"));
-            }
-            if (encoding === "base64url") {
-                return Chunk.toString(chunk, "base64").replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-            }
-            if (encoding === "hex") {
-                let parts = new Array();
-                for (let byte of chunk) {
-                    let part = byte.toString(16).toUpperCase().padStart(2, "0");
-                    parts.push(part);
-                }
-                return parts.join("");
-            }
-            // @ts-ignore
-            return new TextDecoder().decode(chunk);
-        }
-        static equals(one, two) {
-            return this.comparePrefixes(one, two) === 0;
-        }
-        static comparePrefixes(one, two) {
-            for (let i = 0; i < Math.min(one.length, two.length); i++) {
-                let a = one[i];
-                let b = two[i];
-                if (a < b) {
-                    return -1;
-                }
-                if (a > b) {
-                    return 1;
-                }
-            }
-            if (one.length < two.length) {
-                return -1;
-            }
-            if (one.length > two.length) {
-                return 1;
-            }
-            return 0;
-        }
-        static concat(buffers) {
-            let length = buffers.reduce((sum, buffer) => sum + buffer.length, 0);
-            let result = new Uint8Array(length);
-            let offset = 0;
-            for (let buffer of buffers) {
-                result.set(buffer, offset);
-                offset += buffer.length;
-            }
-            return result;
-        }
-    }
-    exports.Chunk = Chunk;
-    ;
-});
-define("node_modules/@joelek/bedrock/dist/lib/utils", ["require", "exports", "node_modules/@joelek/ts-stdlib/dist/lib/asserts/integer", "node_modules/@joelek/ts-stdlib/dist/lib/data/parser", "node_modules/@joelek/ts-stdlib/dist/lib/asserts/integer", "node_modules/@joelek/ts-stdlib/dist/lib/data/chunk", "node_modules/@joelek/ts-stdlib/dist/lib/data/parser"], function (require, exports, integer_1, parser_1, integer_2, chunk_1, parser_2) {
+define("node_modules/@joelek/bedrock/dist/lib/utils", ["require", "exports", "node_modules/@joelek/stdlib/dist/lib/asserts/integer", "node_modules/@joelek/stdlib/dist/lib/data/parser", "node_modules/@joelek/stdlib/dist/lib/asserts/integer", "node_modules/@joelek/stdlib/dist/lib/data/chunk", "node_modules/@joelek/stdlib/dist/lib/data/parser"], function (require, exports, integer_1, parser_1, integer_2, chunk_1, parser_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2386,7 +2548,7 @@ define("node_modules/@joelek/bedrock/dist/lib/index", ["require", "exports", "no
     exports.codecs = codecs;
     exports.utils = utils;
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/bedrock", ["require", "exports", "node_modules/@joelek/bedrock/dist/lib/index"], function (require, exports, bedrock) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/codecs/bedrock", ["require", "exports", "node_modules/@joelek/bedrock/dist/lib/index"], function (require, exports, bedrock) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2404,7 +2566,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/bedrock", ["req
     ;
     exports.CODEC = new BedrockCodec();
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/json", ["require", "exports", "node_modules/@joelek/bedrock/dist/lib/index", "node_modules/@joelek/ts-autoguard/dist/lib-shared/guards"], function (require, exports, bedrock, guards) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/codecs/json", ["require", "exports", "node_modules/@joelek/bedrock/dist/lib/index", "node_modules/@joelek/autoguard/dist/lib-shared/guards"], function (require, exports, bedrock, guards) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2456,7 +2618,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/json", ["requir
     ;
     exports.CODEC = new JSONCodec();
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/bedrock", "node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/json"], function (require, exports, bedrock, json) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/codecs/index", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/codecs/bedrock", "node_modules/@joelek/autoguard/dist/lib-shared/codecs/json"], function (require, exports, bedrock, json) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.json = exports.bedrock = void 0;
@@ -2465,18 +2627,44 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/index", ["requi
     exports.bedrock = bedrock;
     exports.json = json;
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-shared/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/api", "node_modules/@joelek/ts-autoguard/dist/lib-shared/codecs/index", "node_modules/@joelek/ts-autoguard/dist/lib-shared/guards", "node_modules/@joelek/ts-autoguard/dist/lib-shared/serialization"], function (require, exports, api, codecs, guards, serialization) {
+define("node_modules/@joelek/autoguard/dist/lib-shared/tables", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.serialization = exports.guards = exports.codecs = exports.api = void 0;
+    exports.createValueToKeyMap = exports.createKeyToValueMap = exports.createValues = exports.createKeys = void 0;
+    function createKeys(entries) {
+        return entries.map(({ key }) => key);
+    }
+    exports.createKeys = createKeys;
+    ;
+    function createValues(entries) {
+        return entries.map(({ value }) => value);
+    }
+    exports.createValues = createValues;
+    ;
+    function createKeyToValueMap(entries) {
+        return entries.reduce((record, { key, value }) => (Object.assign(Object.assign({}, record), { [key]: value })), {});
+    }
+    exports.createKeyToValueMap = createKeyToValueMap;
+    ;
+    function createValueToKeyMap(entries) {
+        return entries.reduce((record, { key, value }) => (Object.assign(Object.assign({}, record), { [value]: key })), {});
+    }
+    exports.createValueToKeyMap = createValueToKeyMap;
+    ;
+});
+define("node_modules/@joelek/autoguard/dist/lib-shared/index", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/api", "node_modules/@joelek/autoguard/dist/lib-shared/codecs/index", "node_modules/@joelek/autoguard/dist/lib-shared/guards", "node_modules/@joelek/autoguard/dist/lib-shared/serialization", "node_modules/@joelek/autoguard/dist/lib-shared/tables"], function (require, exports, api, codecs, guards, serialization, tables) {
+    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.serialization = exports.guards = exports.codecs = exports.api = void 0;
+    exports.tables = exports.serialization = exports.guards = exports.codecs = exports.api = void 0;
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.tables = exports.serialization = exports.guards = exports.codecs = exports.api = void 0;
     exports.api = api;
     exports.codecs = codecs;
     exports.guards = guards;
     exports.serialization = serialization;
+    exports.tables = tables;
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/index", "node_modules/@joelek/ts-autoguard/dist/lib-shared/api"], function (require, exports, shared, api_1) {
+define("node_modules/@joelek/autoguard/dist/lib-client/api", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/index", "node_modules/@joelek/autoguard/dist/lib-shared/api"], function (require, exports, shared, api_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var __createBinding = (this && this.__createBinding) || (Object.create ? (function (o, m, k, k2) {
@@ -2536,13 +2724,13 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exp
             let headers = this.response.headers;
             return Object.assign({}, headers);
         }
-        payload() {
+        payload(maxByteLength) {
             return __awaiter(this, void 0, void 0, function* () {
                 if (this.collectedPayload !== undefined) {
                     return this.collectedPayload;
                 }
                 let payload = this.response.payload;
-                let collectedPayload = (this.collect ? yield shared.api.collectPayload(payload) : payload);
+                let collectedPayload = (this.collect ? yield shared.api.collectPayload(payload, maxByteLength) : payload);
                 this.collectedPayload = collectedPayload;
                 return collectedPayload;
             });
@@ -2550,7 +2738,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exp
     }
     exports.ServerResponse = ServerResponse;
     ;
-    function xhr(raw, clientOptions) {
+    function xhr(raw, clientOptions, requestOptions) {
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             var _a;
             // @ts-ignore
@@ -2569,6 +2757,22 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exp
                 };
                 resolve(raw);
             };
+            if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.onresponseprogess) !== undefined) {
+                xhr.onprogress = (event) => {
+                    var _a;
+                    if (event.lengthComputable) {
+                        (_a = requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.onresponseprogess) === null || _a === void 0 ? void 0 : _a.call(requestOptions, event.loaded / event.total);
+                    }
+                };
+            }
+            if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.onrequestprogress) !== undefined) {
+                xhr.upload.onprogress = (event) => {
+                    var _a;
+                    if (event.lengthComputable) {
+                        (_a = requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.onrequestprogress) === null || _a === void 0 ? void 0 : _a.call(requestOptions, event.loaded / event.total);
+                    }
+                };
+            }
             let url = (_a = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.urlPrefix) !== null && _a !== void 0 ? _a : "";
             url += shared.api.combineComponents(raw.components);
             url += shared.api.combineParameters(raw.parameters);
@@ -2596,7 +2800,7 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/api", ["require", "exp
     exports.finalizeRequest = finalizeRequest;
     ;
 });
-define("node_modules/@joelek/ts-autoguard/dist/lib-client/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/index", "node_modules/@joelek/ts-autoguard/dist/lib-client/api"], function (require, exports, lib_shared_1, api) {
+define("node_modules/@joelek/autoguard/dist/lib-client/index", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/index", "node_modules/@joelek/autoguard/dist/lib-client/api"], function (require, exports, lib_shared_1, api) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.api = void 0;
@@ -2623,10 +2827,10 @@ define("node_modules/@joelek/ts-autoguard/dist/lib-client/index", ["require", "e
     __exportStar(lib_shared_1, exports);
     exports.api = api;
 });
-define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-shared/index"], function (require, exports, autoguard) {
+define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-shared/index"], function (require, exports, autoguard) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    // This file was auto-generated by @joelek/ts-autoguard. Edit at own risk.
+    // This file was auto-generated by @joelek/autoguard. Edit at own risk.
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Autoguard = exports.Food = void 0;
     exports.Food = autoguard.guards.Object.of({
@@ -2661,11 +2865,11 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
                     "food": autoguard.guards.Reference.of(() => exports.Food)
                 }, {})
             }, {
-                "status": autoguard.guards.Number,
+                "status": autoguard.guards.Integer,
                 "headers": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {}), autoguard.api.Headers)
             }),
             "getStaticContent": autoguard.guards.Object.of({}, {
-                "status": autoguard.guards.Number,
+                "status": autoguard.guards.Integer,
                 "headers": autoguard.guards.Intersection.of(autoguard.guards.Object.of({}, {}), autoguard.api.Headers),
                 "payload": autoguard.api.Binary
             })
@@ -2673,10 +2877,10 @@ define("build/shared/api/index", ["require", "exports", "node_modules/@joelek/ts
     })(Autoguard = exports.Autoguard || (exports.Autoguard = {}));
     ;
 });
-define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/ts-autoguard/dist/lib-client/index", "build/shared/api/index"], function (require, exports, autoguard, shared) {
+define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/autoguard/dist/lib-client/index", "build/shared/api/index"], function (require, exports, autoguard, shared) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    // This file was auto-generated by @joelek/ts-autoguard. Edit at own risk.
+    // This file was auto-generated by @joelek/autoguard. Edit at own risk.
     var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
         function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
         return new (P || (P = Promise))(function (resolve, reject) {
@@ -2703,7 +2907,7 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.makeClient = void 0;
     const makeClient = (clientOptions) => ({
-        "getFood": (request) => __awaiter(void 0, void 0, void 0, function* () {
+        "getFood": (request, requestOptions) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f, _g;
             let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Requests["getFood"], clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.debugMode);
             guard.as(request, "request");
@@ -2721,7 +2925,7 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
             let defaultHeaders = (_g = (_f = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.defaultHeaders) === null || _f === void 0 ? void 0 : _f.slice()) !== null && _g !== void 0 ? _g : [];
             defaultHeaders.push(["Content-Type", "application/octet-stream"]);
             defaultHeaders.push(["Accept", "application/json; charset=utf-8"]);
-            let raw = yield requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions);
+            let raw = yield requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions, requestOptions);
             {
                 let status = raw.status;
                 let headers = {};
@@ -2732,7 +2936,7 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
                 return new autoguard.api.ServerResponse(response, false);
             }
         }),
-        "getStaticContent": (request) => __awaiter(void 0, void 0, void 0, function* () {
+        "getStaticContent": (request, requestOptions) => __awaiter(void 0, void 0, void 0, function* () {
             var _h, _j, _k, _l, _m, _o, _p, _q;
             let guard = autoguard.api.wrapMessageGuard(shared.Autoguard.Requests["getStaticContent"], clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.debugMode);
             guard.as(request, "request");
@@ -2748,7 +2952,7 @@ define("build/shared/api/client", ["require", "exports", "node_modules/@joelek/t
             let defaultHeaders = (_q = (_p = clientOptions === null || clientOptions === void 0 ? void 0 : clientOptions.defaultHeaders) === null || _p === void 0 ? void 0 : _p.slice()) !== null && _q !== void 0 ? _q : [];
             defaultHeaders.push(["Content-Type", "application/octet-stream"]);
             defaultHeaders.push(["Accept", "application/octet-stream"]);
-            let raw = yield requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions);
+            let raw = yield requestHandler(autoguard.api.finalizeRequest({ method, components, parameters, headers, payload }, defaultHeaders), clientOptions, requestOptions);
             {
                 let status = raw.status;
                 let headers = {};
